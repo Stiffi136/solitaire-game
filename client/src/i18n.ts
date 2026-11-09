@@ -39,7 +39,11 @@ const en = {
   cheats: 'Cheats',
   cheatWin: 'Win now',
   cheatLose: 'Hopeless deal',
-  cheatHint: '"Win now" puts all cards on the foundations. "Hopeless deal" starts a game in which no move is possible. Both can be undone and apply to everyone in a multiplayer room.',
+  cheatHard: 'Hard loss (seed 295)',
+  cheatBadge: 'Cheat used',
+  cheatNote: 'Cheats were used in this round: {list}',
+  cheatUsedBy: '{name} used a cheat: {cheat}',
+  cheatHint: '"Win now" puts all cards on the foundations. "Hopeless deal" starts a game in which no move is possible. "Hard loss" loads a lost position that takes the hint search several seconds to prove. Cheats apply to everyone in a multiplayer room and stay marked until a new game starts.',
   helpTitle: 'How to play',
   helpHtml: `<p><b>Goal:</b> Move all cards by suit from ace to king onto the four foundations at the top right (♠ ♥ ♦ ♣).</p>
 <ul>
@@ -117,7 +121,11 @@ const de: Record<Key, string> = {
   cheats: 'Cheats',
   cheatWin: 'Sofort gewinnen',
   cheatLose: 'Aussichtslose Partie',
-  cheatHint: '„Sofort gewinnen“ legt alle Karten auf die Ablagen. „Aussichtslose Partie“ startet ein Spiel, in dem kein Zug möglich ist. Beides lässt sich rückgängig machen und gilt im Mehrspieler für alle im Raum.',
+  cheatHard: 'Schwere Niederlage (Seed 295)',
+  cheatBadge: 'Cheat benutzt',
+  cheatNote: 'In dieser Runde wurden Cheats benutzt: {list}',
+  cheatUsedBy: '{name} hat einen Cheat benutzt: {cheat}',
+  cheatHint: '„Sofort gewinnen“ legt alle Karten auf die Ablagen. „Aussichtslose Partie“ startet ein Spiel, in dem kein Zug möglich ist. „Schwere Niederlage“ lädt eine verlorene Stellung, für deren Beweis die Tipp-Suche mehrere Sekunden braucht. Cheats gelten im Mehrspieler für alle im Raum und bleiben markiert, bis eine neue Runde startet.',
   helpTitle: 'So wird gespielt',
   helpHtml: `<p><b>Ziel:</b> Alle Karten nach Farbe von Ass bis König auf die vier Ablagen oben rechts legen (♠ ♥ ♦ ♣).</p>
 <ul>

@@ -9,6 +9,8 @@ import { NetClient, NetStatus, normalizeServerUrl, throttle } from './net';
 import { TableRenderer } from './renderer';
 import { applyStatic, Lang, setLang, t } from './i18n';
 
+const CHEAT_LABEL = { win: 'cheatWin', lose: 'cheatLose', hard: 'cheatHard' } as const;
+
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
 window.addEventListener('error', (e) => showFatal(String(e.message)));
@@ -147,6 +149,7 @@ const fmtTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:$
 
 function updateHud() {
   const st = game.state;
+  renderCheatMark();
   $('time').textContent = fmtTime(elapsedSeconds(st));
   $('moves').textContent = String(st.moves);
   $('score').textContent = String(displayScore(st));
@@ -243,14 +246,28 @@ $('dlg-settings').addEventListener('change', () => {
 $('btn-help').onclick = () => openModal('dlg-help');
 
 // cheats
-$('cheat-win').onclick = () => {
-  document.querySelectorAll<HTMLElement>('.modal').forEach((m) => (m.hidden = true));
-  dispatch({ type: 'cheat', cheat: 'win' });
-};
-$('cheat-lose').onclick = () => {
-  document.querySelectorAll<HTMLElement>('.modal').forEach((m) => (m.hidden = true));
-  dispatch({ type: 'cheat', cheat: 'lose' });
-};
+for (const cheat of ['win', 'lose', 'hard'] as const) {
+  $(`cheat-${cheat}`).onclick = () => {
+    document.querySelectorAll<HTMLElement>('.modal').forEach((m) => (m.hidden = true));
+    dispatch({ type: 'cheat', cheat });
+  };
+}
+
+/** Shows the cheat mark in the top bar and in the result dialogs. */
+function cheatList(st: GameState) { return (st.cheats ?? []).map((c) => t(CHEAT_LABEL[c])).join(', '); }
+
+function renderCheatMark() {
+  const st = game.state;
+  const used = !!st.cheats?.length;
+  const badge = $('cheat-badge');
+  badge.hidden = !used;
+  badge.querySelector('span')!.textContent = t('cheatBadge');
+  badge.title = used ? t('cheatNote', { list: cheatList(st) }) : '';
+  document.querySelectorAll<HTMLElement>('.cheat-note').forEach((p) => {
+    p.hidden = !used;
+    p.textContent = used ? t('cheatNote', { list: cheatList(st) }) : '';
+  });
+}
 
 // fullscreen
 const fsBtn = $('btn-fs');
@@ -404,6 +421,13 @@ function onServerMessage(m: ServerMsg) {
       toast(t('connectedTo', { room: m.room }));
       break;
     case 'state': {
+      // tell everyone when a teammate cheats
+      const before = game.state.cheats?.length ?? 0;
+      const after = m.state.cheats ?? [];
+      if (m.by && m.by !== myId && after.length > before) {
+        const who = players.find((p) => p.id === m.by)?.name ?? '?';
+        toast(t('cheatUsedBy', { name: who, cheat: t(CHEAT_LABEL[after[after.length - 1]]) }));
+      }
       if (m.by === myId || m.by === undefined) pending = Math.max(0, pending - 1);
       if (m.by === myId && pending > 0) break; // newer local state is already shown
       game.state = m.state;

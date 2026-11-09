@@ -36,6 +36,10 @@ button.icon svg { width: 28px; height: 28px; }
 #mp-dot.on { display: block; background: #4ade80; }
 #mp-dot.wait { display: block; background: #fbbf24; }
 
+#cheat-badge { display: flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; background: #b45309; color: #fff; font-size: 14px; font-weight: 600; white-space: nowrap; }
+#cheat-badge svg { width: 18px; height: 18px; }
+.modal p.cheat-note { color: #fbbf24; font-weight: 600; }
+@media (max-width: 640px) { #cheat-badge span { display: none; } #cheat-badge { padding: 4px; } }
 #players { display: flex; gap: 6px; flex-wrap: nowrap; overflow: hidden; }
 .chip { display: flex; align-items: center; gap: 6px; padding: 3px 10px 3px 6px; border-radius: 99px; background: rgba(0, 0, 0, 0.25); font-size: 14px; white-space: nowrap; }
 .chip i { width: 10px; height: 10px; border-radius: 50%; }

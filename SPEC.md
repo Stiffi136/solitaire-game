@@ -51,7 +51,9 @@ render.yaml        Render blueprint
 - Code: `shared/solver.ts` (`findHint`, `isGameOver`).
 - Detection: direct progress moves are checked first (playable waste card, revealing move; aces and twos always go to the foundation first). Otherwise a breadth-first search runs over all legal tableau and foundation moves, including foundation-to-tableau moves.
 - Search state: inside the search, hidden cards stay hidden and stock/waste keep their cards, so a state is only the tableau columns and the foundation heights. Drawing does not change the tableau, so the cards that can reach the top of the waste by drawing are computed once; a state counts as progress as soon as one of them can be played.
-- The search visits at most 200,000 states. If it hits this limit, the game counts as **not** over (never a false game over). In tests this happens in about 1 of 600 games.
+- Two stages: a breadth-first search (up to 200,000 states) returns the first move of a shortest path to progress. If that is not enough, a depth-first search with low memory use (up to 4 million states) follows; if it finds a path, the path is remembered and the next hints follow it.
+- Visited states are stored as 64-bit hashes in a typed-array hash set. Worst measured case (seed 295): about 1.5 million states, 5.5 s (Node) / 12 s (browser, dev build), runs with a 64 MB heap plus about 50 MB for the hash set.
+- If the search hits its limit, the game counts as **not** over (never a false game over, apart from a hash collision with a probability below 1e-6).
 - The hint uses the same logic: it returns the first move on a shortest path to progress, so following hints never loops.
 - The client runs the search in a Web Worker (`client/src/solver.worker.ts`), so a long search does not block the UI.
 - Test: `npm run test:solver` (bot on 200 games: no illegal hint, no loop; independent search on game-over states: no false game over). It also runs in the Pages workflow.
@@ -73,6 +75,9 @@ In the settings dialog (section "Cheats"). Both are normal game actions (`{ type
   - all aces, and every black card that would fit on one of the red top cards, are hidden in the tableau;
   - the stock holds only cards that fit nowhere.
   Pressing "Hint" shows "No moves" at once.
+- **Hard loss (seed 295)** (`hard`): loads a lost position from seed 295 (draw 1), reached by following the hints. Proving that it is lost needs a search over about 1.5 million positions: about 5–12 s with the spinner on the hint button (desktop), then "No moves".
+
+**Cheat mark**: the cheats used are stored in the game state (`cheats`). Undo keeps the mark; only a new game clears it. While it is set, everyone in the room sees a "Cheat used" badge in the top bar (hover: which cheats), and the win and game-over dialogs name the cheats. Other players also get a message "‹name› used a cheat: ‹cheat›".
 
 ### 4.3 Score (Windows standard scoring)
 
@@ -172,7 +177,7 @@ Client → server:
 | `t` | Content |
 |---|---|
 | `join` | `room`, `name`, `state?` (initial state if the room is new) |
-| `action` | `move {cardId, to}` · `draw` · `undo` · `newGame {seed, drawCount, timePenalty}` · `cheat {cheat: win \| lose}` |
+| `action` | `move {cardId, to}` · `draw` · `undo` · `newGame {seed, drawCount, timePenalty}` · `cheat {cheat: win \| lose \| hard}` |
 | `cursor` | `x`, `y` |
 | `drag` | `cards[]`, `x`, `y` (position of the top dragged card) |
 | `dragEnd` | – |

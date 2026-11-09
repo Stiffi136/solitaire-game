@@ -18,6 +18,7 @@
       <span><span class="lbl"><span data-i18n="moves"></span>: </span><b id="moves">0</b></span>
       <span id="score-wrap"><span class="lbl"><span data-i18n="score"></span>: </span><b id="score">0</b></span>
     </div>
+    <div id="cheat-badge" hidden><svg viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg><span></span></div>
     <div id="players"></div>
     <div class="icons">
       <button id="btn-mp" class="icon" data-i18n-title="multiplayer">
@@ -65,6 +66,7 @@
     <div class="card center">
       <h2 data-i18n="winTitle"></h2>
       <p id="win-stats"></p>
+      <p class="cheat-note" hidden></p>
       <div class="row center">
         <button class="pill" data-close data-i18n="close"></button>
         <button class="pill accent" id="win-new" data-i18n="newGame"></button>
@@ -77,6 +79,7 @@
       <h2 data-i18n="overTitle"></h2>
       <p data-i18n="overText"></p>
       <p id="over-stats"></p>
+      <p class="cheat-note" hidden></p>
       <div class="row center">
         <button class="pill" id="over-undo" data-i18n="undo"></button>
         <button class="pill accent" id="over-new" data-i18n="newGame"></button>
@@ -104,6 +107,7 @@
         <legend data-i18n="cheats"></legend>
         <button class="pill" id="cheat-win" data-i18n="cheatWin"></button>
         <button class="pill" id="cheat-lose" data-i18n="cheatLose"></button>
+        <button class="pill" id="cheat-hard" data-i18n="cheatHard"></button>
         <p class="hint" data-i18n="cheatHint"></p>
       </fieldset>
       <div class="row end"><button class="pill accent" data-close data-i18n="done"></button></div>

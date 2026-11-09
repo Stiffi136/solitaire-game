@@ -20,6 +20,10 @@ export const isRed = (id: number) => { const s = suitOf(id); return s === 1 || s
 
 export type DrawCount = 1 | 3;
 
+/** win: all cards to the foundations; lose: hopeless deal; hard: lost position that is very hard to prove (seed 295). */
+export type Cheat = 'win' | 'lose' | 'hard';
+export const CHEATS: Cheat[] = ['win', 'lose', 'hard'];
+
 export interface GameState {
   piles: Record<PileId, number[]>; // bottom first
   faceUp: boolean[];               // indexed by card id
@@ -32,6 +36,8 @@ export interface GameState {
   startedAt: number | null; // ms epoch, set on first action
   wonAt: number | null;
   version: number;    // increments on every change
+  /** Cheats used in this round; kept by undo, cleared by a new game. */
+  cheats?: Cheat[];
 }
 
 export type Action =
@@ -39,8 +45,7 @@ export type Action =
   | { type: 'draw' }
   | { type: 'undo' }
   | { type: 'newGame'; seed: number; drawCount: DrawCount; timePenalty: boolean }
-  /** Cheats: "win" puts all cards on the foundations, "lose" deals a hopeless game. */
-  | { type: 'cheat'; cheat: 'win' | 'lose' };
+  | { type: 'cheat'; cheat: Cheat };
 
 export interface Game { state: GameState; history: GameState[] }
 
@@ -193,26 +198,28 @@ function applyInner(game: Game, action: Action): boolean {
       return true;
     }
     case 'cheat': {
-      if (action.cheat === 'win') {
+      const cheat = action.cheat;
+      if (!CHEATS.includes(cheat)) return false;
+      let next: GameState;
+      if (cheat === 'win') {
         if (cur.wonAt != null) return false;
-        const next = clone(cur);
+        next = clone(cur);
         for (const p of ALL_PILES) next.piles[p] = [];
         FOUNDATIONS.forEach((f, suit) => { next.piles[f] = Array.from({ length: 13 }, (_, r) => suit * 13 + r); });
         next.faceUp.fill(true);
-        commit(game, next);
-        return true;
+      } else {
+        next = cheat === 'lose' ? hopelessGame(cur) : hardLostGame(cur);
       }
-      if (action.cheat === 'lose') {
-        const next = hopelessGame(cur);
-        commit(game, next);
-        next.moves = 0;
-        return true;
-      }
-      return false;
+      next.cheats = [...(cur.cheats ?? []), cheat];
+      commit(game, next);
+      if (cheat !== 'win') next.moves = 0;
+      return true;
     }
     case 'undo': {
       const prev = game.history.pop();
       if (!prev) return false;
+      // the cheat mark stays until a new game starts
+      if (cur.cheats?.length) prev.cheats = cur.cheats;
       prev.version = cur.version + 1;
       game.state = prev;
       return true;
@@ -293,6 +300,23 @@ function hopelessGame(cur: GameState): GameState {
     st.faceUp[tops[col]] = true;
   });
   st.piles.stock = stock;
+  st.version = cur.version;
+  return st;
+}
+
+/**
+ * A lost position from seed 295 (draw 1), reached by following the hints.
+ * Proving that it is lost needs a search over about 1.5 million positions.
+ */
+const HARD_LOST = {
+  piles: {"stock":[10],"waste":[],"f0":[0],"f1":[13,14],"f2":[26,27,28,29,30],"f3":[39,40,41],"t0":[25,11,23,48,21,7,32,5,17,3,15],"t1":[38],"t2":[46,19,44],"t3":[51,24,49,35,8,33,6,31,4],"t4":[50,34,36,9],"t5":[12,37,1,22,47,20,45,18,43,16,2],"t6":[42]} as Record<PileId, number[]>,
+  hidden: [1, 10, 12, 34, 37, 50],
+};
+
+function hardLostGame(cur: GameState): GameState {
+  const st = newGame(295, 1, cur.timePenalty);
+  st.piles = JSON.parse(JSON.stringify(HARD_LOST.piles));
+  st.faceUp = Array.from({ length: 52 }, (_, id) => !HARD_LOST.hidden.includes(id));
   st.version = cur.version;
   return st;
 }
