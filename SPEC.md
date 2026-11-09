@@ -149,7 +149,11 @@ The **time penalty** can be switched on/off (default: on). It is stored in the g
 ### 7.1 Flow
 - Multiplayer dialog: name and room code. The server address is **not** shown or editable (see 8).
 - **Create room**: random 5-character code; the creator's current game is taken over.
-- **Join**: by code or invite link `…/?room=CODE`.
+- **Join**: by code (multiplayer dialog) or invite link `…/?room=CODE`.
+- **Invite link flow**: opening the link shows a short dialog "You're invited! Play together in room CODE" with only a name field (prefilled with the saved name) and:
+  - primary button **Join game** (also Enter) → joins the room;
+  - secondary button **Play alone instead** (text style) → starts a new single-player game and removes `room` from the address.
+  The dialog cannot be closed by clicking beside it or by Escape. After a reload inside a room, the same browser tab rejoins directly without the dialog (room kept in `sessionStorage`).
 - **Share invite**: uses the browser's native share sheet (Web Share API, `navigator.share`), so the link can be posted directly to WhatsApp, Signal, SMS etc. Shared data: title "Solitaire", a short text in the UI language ("Join my Solitaire game! Room CODE") and the invite link. Available as a "Share invite" button in the multiplayer dialog and as a share icon in the top bar while in a room. Both are only shown where the browser supports it (mobile browsers, some desktop browsers); otherwise only "Copy link" is shown. Closing the share sheet does nothing; other share errors fall back to copying the link.
 - If no server is configured for the build, the multiplayer button is hidden.
 - All players may move at any time; there are no turns.

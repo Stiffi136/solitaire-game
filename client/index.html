@@ -123,6 +123,19 @@
     </div>
   </div>
 
+  <!-- opened by an invite link; can only be left by joining or playing alone -->
+  <div class="modal" id="dlg-invite" data-static hidden>
+    <div class="card center invite">
+      <h2 data-i18n="inviteTitle"></h2>
+      <p><span data-i18n="inviteText"></span> <b id="invite-code" class="code"></b></p>
+      <form id="invite-form">
+        <label class="field"><span data-i18n="yourName"></span><input id="invite-name" maxlength="20" autocomplete="nickname" enterkeyhint="go" data-i18n-placeholder="namePlaceholder" /></label>
+        <button type="submit" class="pill primary" id="invite-join" data-i18n="joinGame"></button>
+      </form>
+      <button class="pill secondary" id="invite-solo" data-i18n="playAlone"></button>
+    </div>
+  </div>
+
   <div class="modal" id="dlg-mp" hidden>
     <div class="card">
       <h2 data-i18n="multiplayer"></h2>

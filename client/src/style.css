@@ -61,6 +61,13 @@ button.icon svg { width: 28px; height: 28px; }
 .pill:hover { background: rgba(255, 255, 255, 0.1); }
 .pill:active { transform: scale(0.97); }
 .pill:disabled { opacity: 0.4; cursor: default; }
+.pill.primary { background: var(--accent); border-color: var(--accent); color: #1d1a0c; font-weight: 600; }
+.pill.primary:hover { background: #f7d66e; }
+.pill.secondary { background: transparent; border-color: transparent; color: var(--muted); font-size: 15px; text-decoration: underline; text-underline-offset: 3px; }
+.pill.secondary:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+.card.invite form { display: grid; gap: 14px; text-align: left; margin-top: 4px; }
+.card.invite .pill.primary { width: 100%; min-height: 50px; font-size: 18px; }
+.card.invite .pill.secondary { margin-top: 10px; }
 .pill.accent { border-color: var(--accent); color: var(--accent); }
 .pill.danger { border-color: #f87171; color: #fca5a5; }
 .pill[hidden] { display: none; }

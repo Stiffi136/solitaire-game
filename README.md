@@ -60,7 +60,7 @@ The server address is compiled into the build and is not shown in the UI. Withou
 ## Multiplayer
 
 - 👥 → enter a name → **Create new room**. The current game is taken over.
-- Share the invite: on phones the share button opens the native share sheet (WhatsApp, Signal, SMS …); everywhere the link (`…/?room=CODE`) can be copied. Whoever opens it joins directly.
+- Share the invite: on phones the share button opens the native share sheet (WhatsApp, Signal, SMS …); everywhere the link (`…/?room=CODE`) can be copied. Whoever opens it only enters a name and taps **Join game**, or chooses to play alone.
 - Everyone plays the same game. Pointers and dragged cards of the other players are visible live.
 - The server is authoritative: it checks every move with the same rules and sends the new state to everyone.
 - Rooms are deleted 30 minutes after the last player left.

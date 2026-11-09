@@ -25,6 +25,8 @@ function showFatal(msg: string) {
 
 interface Settings { drawCount: DrawCount; timePenalty: boolean; showScore: boolean; animations: boolean; name: string; lang: Lang }
 const SETTINGS_KEY = 'solitaire.settings';
+/** sessionStorage: room of this tab, to rejoin after a reload. */
+const ACTIVE_ROOM_KEY = 'solitaire.activeRoom';
 const GAME_KEY = 'solitaire.game';
 /** Multiplayer server, fixed at build time (VITE_SERVER_URL) or derived for local dev. */
 const SERVER_URL = normalizeServerUrl((import.meta.env.VITE_SERVER_URL as string | undefined)
@@ -176,11 +178,11 @@ function closeModal(id: string) { $(id).hidden = true; }
 document.querySelectorAll<HTMLElement>('.modal').forEach((m) => {
   m.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    if (target === m || target.closest('[data-close]')) m.hidden = true;
+    if ((target === m && !m.hasAttribute('data-static')) || target.closest('[data-close]')) m.hidden = true;
   });
 });
 window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') document.querySelectorAll<HTMLElement>('.modal').forEach((m) => (m.hidden = true));
+  if (e.key === 'Escape') document.querySelectorAll<HTMLElement>('.modal:not([data-static])').forEach((m) => (m.hidden = true));
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !(e.target instanceof HTMLInputElement)) {
     e.preventDefault();
     dispatch({ type: 'undo' });
@@ -408,11 +410,13 @@ function connect(server: string, room: string, name: string) {
   const u = new URL(location.href);
   u.searchParams.set('room', room);
   history.replaceState(null, '', u);
+  sessionStorage.setItem(ACTIVE_ROOM_KEY, room);
   renderMpDialog();
 }
 
 function leave() {
   if (!net) return;
+  sessionStorage.removeItem(ACTIVE_ROOM_KEY);
   const n = net;
   net = null;
   n.close();
@@ -513,14 +517,49 @@ function removeCursor(id: string) { cursors.get(id)?.el.remove(); cursors.delete
 function clearCursors() { for (const id of [...cursors.keys()]) removeCursor(id); }
 
 // ---------- invite link ----------
+// Opening …/?room=CODE shows a short dialog: enter a name and join, or play alone.
+// After a reload inside a room (same tab) the player rejoins directly.
+
+function removeRoomParam() {
+  const u = new URL(location.href);
+  u.searchParams.delete('room');
+  history.replaceState(null, '', u);
+}
+
+function showInvite(room: string) {
+  $('invite-code').textContent = room;
+  const name = $<HTMLInputElement>('invite-name');
+  name.value = settings.name;
+  openModal('dlg-invite');
+  // focusing on touch devices would pop up the keyboard over the dialog
+  if (!settings.name && !matchMedia('(pointer: coarse)').matches) name.focus();
+}
+
+$('invite-form').addEventListener('submit', (e) => {
+  e.preventDefault();
+  const room = $('invite-code').textContent || '';
+  const input = $<HTMLInputElement>('invite-name');
+  const name = input.value.trim().slice(0, 20);
+  if (!name) { toast(t('enterName')); input.focus(); return; }
+  settings.name = name;
+  saveSettings();
+  closeModal('dlg-invite');
+  connect(SERVER_URL, room, name);
+});
+
+$('invite-solo').onclick = () => {
+  closeModal('dlg-invite');
+  removeRoomParam();
+  startNewGame();
+};
 
 {
-  const params = new URLSearchParams(location.search);
-  const room = cleanCode(params.get('room') || '');
+  const room = cleanCode(new URLSearchParams(location.search).get('room') || '');
   if (room && SERVER_URL) {
-    $<HTMLInputElement>('mp-room').value = room;
-    if (settings.name) connect(SERVER_URL, room, settings.name);
-    else { renderMpDialog(); openModal('dlg-mp'); }
+    if (sessionStorage.getItem(ACTIVE_ROOM_KEY) === room && settings.name) connect(SERVER_URL, room, settings.name);
+    else showInvite(room);
+  } else if (room) {
+    removeRoomParam(); // no multiplayer server in this build
   }
 }
 
