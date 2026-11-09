@@ -150,6 +150,7 @@ The **time penalty** can be switched on/off (default: on). It is stored in the g
 - Multiplayer dialog: name and room code. The server address is **not** shown or editable (see 8).
 - **Create room**: random 5-character code; the creator's current game is taken over.
 - **Join**: by code or invite link `…/?room=CODE`.
+- **Share invite**: uses the browser's native share sheet (Web Share API, `navigator.share`), so the link can be posted directly to WhatsApp, Signal, SMS etc. Shared data: title "Solitaire", a short text in the UI language ("Join my Solitaire game! Room CODE") and the invite link. Available as a "Share invite" button in the multiplayer dialog and as a share icon in the top bar while in a room. Both are only shown where the browser supports it (mobile browsers, some desktop browsers); otherwise only "Copy link" is shown. Closing the share sheet does nothing; other share errors fall back to copying the link.
 - If no server is configured for the build, the multiplayer button is hidden.
 - All players may move at any time; there are no turns.
 - Players are shown in the top bar with a colored dot and name.

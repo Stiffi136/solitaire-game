@@ -301,6 +301,7 @@ function renderMpDialog() {
     return;
   }
   $('mp-code').textContent = net!.room;
+  $('mp-share').hidden = !canShare;
   $<HTMLInputElement>('mp-link').value = inviteLink(net!.room);
   const ul = $('mp-players');
   ul.innerHTML = '';
@@ -316,6 +317,7 @@ function renderMpDialog() {
 function renderPlayers() {
   const box = $('players');
   box.innerHTML = '';
+  $('btn-share').hidden = !(online && canShare);
   if (!online) return;
   for (const p of players) {
     const chip = document.createElement('div');
@@ -354,15 +356,38 @@ $('mp-join').onclick = () => {
   connect(f.server, room, f.name);
 };
 $('mp-leave').onclick = () => { leave(); renderMpDialog(); };
-$('mp-copy').onclick = async () => {
-  const link = $<HTMLInputElement>('mp-link').value;
+// Invite: native share sheet (WhatsApp, Signal, SMS …) where the browser has one, else copy.
+const canShare = typeof navigator.share === 'function';
+
+async function copyInvite() {
+  if (!net) return;
+  const link = inviteLink(net.room);
   try {
-    if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ title: 'Solitaire', url: link });
-    else { await navigator.clipboard.writeText(link); toast(t('linkCopied')); }
+    await navigator.clipboard.writeText(link);
+    toast(t('linkCopied'));
   } catch {
+    // no clipboard access (e.g. insecure context): let the user copy by hand
+    renderMpDialog();
+    openModal('dlg-mp');
     $<HTMLInputElement>('mp-link').select();
   }
-};
+}
+
+async function shareInvite() {
+  if (!net) return;
+  const data: ShareData = { title: 'Solitaire', text: t('shareText', { room: net.room }), url: inviteLink(net.room) };
+  if (!canShare || (navigator.canShare && !navigator.canShare(data))) return copyInvite();
+  try {
+    await navigator.share(data);
+  } catch (e) {
+    // AbortError = the user closed the share sheet; anything else: fall back to copying
+    if ((e as DOMException)?.name !== 'AbortError') await copyInvite();
+  }
+}
+
+$('mp-copy').onclick = () => void copyInvite();
+$('mp-share').onclick = () => void shareInvite();
+$('btn-share').onclick = () => void shareInvite();
 
 let netStatus: NetStatus = 'closed';
 function setStatus(s: NetStatus) {

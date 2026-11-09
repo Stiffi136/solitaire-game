@@ -25,6 +25,7 @@
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <i id="mp-dot"></i>
       </button>
+      <button id="btn-share" class="icon" data-i18n-title="shareInvite" hidden><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></button>
       <button id="btn-help" class="icon" data-i18n-title="help">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
       </button>
@@ -138,6 +139,7 @@
         <p><span data-i18n="room"></span> <b id="mp-code" class="code"></b> · <span id="mp-status"></span></p>
         <label class="field"><span data-i18n="inviteLink"></span><input id="mp-link" readonly /></label>
         <div class="row">
+          <button class="pill accent" id="mp-share" hidden><svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg><span data-i18n="shareInvite"></span></button>
           <button class="pill" id="mp-copy" data-i18n="copyLink"></button>
           <button class="pill danger" id="mp-leave" data-i18n="leaveRoom"></button>
         </div>
