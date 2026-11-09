@@ -95,28 +95,48 @@ function stateChanged() {
   const won = game.state.wonAt != null;
   if (won && !lastWon) setTimeout(showWin, settings.animations ? 4500 : 200);
   lastWon = won;
-  checkGameOver();
+  setHintState('idle');
 }
 
-// Game over: checked in a worker shortly after the last change, shown once per state.
-const overSolver = new SolverClient();
-const hintSolver = new SolverClient();
-let overTimer = 0;
-let overShownFor = -1;
-function checkGameOver() {
-  clearTimeout(overTimer);
-  closeModal('dlg-over');
-  overTimer = window.setTimeout(async () => {
-    const st = game.state;
-    if (st.wonAt != null || pending > 0 || st.version === overShownFor) return;
-    const hint = await overSolver.hint(st);
-    // null = no progress possible; undefined = cancelled; ignore if the game changed meanwhile
-    if (hint !== null || game.state !== st || pending > 0) return;
-    overShownFor = st.version;
-    $<HTMLButtonElement>('over-undo').disabled = !online && game.history.length === 0;
-    $('over-stats').innerHTML = statsLine(st);
-    openModal('dlg-over');
-  }, 700);
+// Hint and game over. The search runs only when the hint button is pressed
+// (in a worker). The button shows the state: idle, searching, or "no moves".
+const solver = new SolverClient();
+type HintState = 'idle' | 'busy' | 'over';
+let hintState: HintState = 'idle';
+function setHintState(s: HintState) {
+  hintState = s;
+  const btn = $<HTMLButtonElement>('btn-hint');
+  btn.dataset.state = s;
+  btn.setAttribute('aria-busy', String(s === 'busy'));
+  const key = s === 'busy' ? 'searching' : s === 'over' ? 'noMovesShort' : 'hint';
+  btn.querySelector('.lbl')!.setAttribute('data-i18n', key);
+  btn.querySelector('.lbl')!.textContent = t(key);
+  btn.title = t(key);
+  if (s !== 'over') closeModal('dlg-over');
+}
+
+function showGameOver() {
+  $<HTMLButtonElement>('over-undo').disabled = !online && game.history.length === 0;
+  $('over-stats').innerHTML = statsLine(game.state);
+  openModal('dlg-over');
+}
+
+async function onHint() {
+  const st = game.state;
+  if (st.wonAt != null) return toast(t('alreadyWon'));
+  if (hintState === 'busy') return;
+  if (hintState === 'over') return showGameOver();
+  setHintState('busy');
+  const h = await solver.hint(st);
+  if (game.state !== st) return; // the game changed meanwhile; stateChanged() reset the button
+  if (h === undefined) return setHintState('idle');
+  if (h) {
+    setHintState('idle');
+    renderer.showHint(h);
+  } else {
+    setHintState('over');
+    showGameOver();
+  }
 }
 
 // ---------- HUD ----------
@@ -180,14 +200,7 @@ $('win-new').onclick = startNewGame;
 $('over-new').onclick = startNewGame;
 $('over-undo').onclick = () => { closeModal('dlg-over'); dispatch({ type: 'undo' }); };
 $('btn-undo').onclick = () => dispatch({ type: 'undo' });
-$('btn-hint').onclick = async () => {
-  const st = game.state;
-  if (st.wonAt != null) return toast(t('alreadyWon'));
-  const h = await hintSolver.hint(st);
-  if (h === undefined || game.state !== st) return;
-  if (h) renderer.showHint(h);
-  else toast(t('noMoves'));
-};
+$('btn-hint').onclick = () => void onHint();
 
 let finishing = 0;
 $('btn-finish').onclick = () => {
@@ -377,7 +390,7 @@ function onServerMessage(m: ServerMsg) {
       game.history = [];
       lastWon = m.state.wonAt != null;
       renderer.setState(game.state);
-      updateHud(); renderPlayers(); renderMpDialog(); checkGameOver();
+      updateHud(); renderPlayers(); renderMpDialog(); setHintState('idle');
       toast(t('connectedTo', { room: m.room }));
       break;
     case 'state': {
@@ -457,9 +470,8 @@ function refreshTexts() {
   setStatus(netStatus);
   renderMpDialog();
   renderPlayers();
+  setHintState(hintState);
   if (!$('dlg-over').hidden) $('over-stats').innerHTML = statsLine(game.state);
   if (!$('dlg-win').hidden) $('win-stats').innerHTML = statsLine(game.state);
 }
 
-// a saved game may already be over
-checkGameOver();

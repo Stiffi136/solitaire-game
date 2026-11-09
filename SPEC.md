@@ -53,9 +53,15 @@ render.yaml        Render blueprint
 - Search state: inside the search, hidden cards stay hidden and stock/waste keep their cards, so a state is only the tableau columns and the foundation heights. Drawing does not change the tableau, so the cards that can reach the top of the waste by drawing are computed once; a state counts as progress as soon as one of them can be played.
 - The search visits at most 200,000 states. If it hits this limit, the game counts as **not** over (never a false game over). In tests this happens in about 1 of 600 games.
 - The hint uses the same logic: it returns the first move on a shortest path to progress, so following hints never loops.
-- The client runs the search in a Web Worker (`client/src/solver.worker.ts`), so a long search (up to about 1 s) does not block the UI. A new request cancels a running one.
+- The client runs the search in a Web Worker (`client/src/solver.worker.ts`), so a long search does not block the UI.
 - Test: `npm run test:solver` (bot on 200 games: no illegal hint, no loop; independent search on game-over states: no false game over). It also runs in the Pages workflow.
-- UI: a "No moves left" dialog with time, moves, score and the buttons "Undo" and "New game". It is shown once per game state, about 0.7 s after the last change. In multiplayer, every player sees it.
+- **The check runs only when the player presses "Hint"** (no automatic check, to save CPU, memory and battery). Measured cost: 99 % of checks take less than 0.4 ms; about 0.3 % (end of lost games) take 50 ms to about 1 s and briefly use tens of MB in the worker.
+- The hint button shows its state:
+  - **Hint**: ready.
+  - **Searching…**: a spinner replaces the bulb icon while the search runs; further clicks are ignored.
+  - **No moves**: red outline. The "No moves left" dialog (time, moves, score, "Undo", "New game") opens; a click on the button opens it again.
+  - Any change of the game (also by another player) resets the button to "Hint".
+- In multiplayer, game over is only shown to the player who pressed "Hint".
 
 ### 4.2 Score (Windows standard scoring)
 
@@ -108,7 +114,7 @@ The **time penalty** can be switched on/off (default: on). It is stored in the g
 - Settings: language (English/German), draw 1/3 and time penalty on/off (both apply from the next game), show score on/off, animations on/off
 - New game: confirmation if a game is in progress
 - Win: time, moves, score, "New game" button
-- Game over: see 4.1
+- Game over: see 4.1 (opened from the hint button)
 - Multiplayer: see 7
 
 **Mobile (portrait)**: top bar shows only the logo symbol, compact values (`00:34 · 12 · 283`); bottom bar icons only. The fullscreen button is hidden if the browser does not support it (iPhone).

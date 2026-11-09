@@ -123,3 +123,11 @@ kbd { background: rgba(255,255,255,.15); border-radius: 4px; padding: 1px 5px; f
   #bottombar { gap: 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
   #bottombar .pill { padding: 8px 22px; }
 }
+
+/* hint button states */
+#btn-hint[data-state="busy"] { cursor: progress; opacity: 0.85; }
+#btn-hint .spinner { display: none; animation: hint-spin 0.9s linear infinite; }
+#btn-hint[data-state="busy"] .spinner { display: block; }
+#btn-hint[data-state="busy"] .bulb { display: none; }
+#btn-hint[data-state="over"] { border-color: #f87171; color: #fca5a5; }
+@keyframes hint-spin { to { transform: rotate(360deg); } }
