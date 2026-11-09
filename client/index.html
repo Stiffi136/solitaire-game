@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b351e" />
+  <title>Solitaire</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%2322703f' d='M12 2C9 6 4 8.5 4 13a4 4 0 0 0 7 2.6c-.2 2.4-1 4.4-3 6.4h8c-2-2-2.8-4-3-6.4A4 4 0 0 0 20 13c0-4.5-5-7-8-11z'/%3E%3C/svg%3E" />
+</head>
+<body>
+  <header id="topbar">
+    <div class="brand">
+      <svg viewBox="0 0 24 24" class="logo"><path fill="currentColor" d="M12 2C9 6 4 8.5 4 13a4 4 0 0 0 7 2.6c-.2 2.4-1 4.4-3 6.4h8c-2-2-2.8-4-3-6.4A4 4 0 0 0 20 13c0-4.5-5-7-8-11z"/></svg>
+      <span class="lbl">Solitaire</span>
+    </div>
+    <div class="stats">
+      <span><span class="lbl">Zeit: </span><b id="time">00:00</b></span>
+      <span><span class="lbl">Züge: </span><b id="moves">0</b></span>
+      <span id="score-wrap"><span class="lbl">Punkte: </span><b id="score">0</b></span>
+    </div>
+    <div id="players"></div>
+    <div class="icons">
+      <button id="btn-mp" class="icon" title="Mehrspieler" aria-label="Mehrspieler">
+        <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <i id="mp-dot"></i>
+      </button>
+      <button id="btn-help" class="icon" title="Hilfe" aria-label="Hilfe">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+      </button>
+      <button id="btn-settings" class="icon" title="Einstellungen" aria-label="Einstellungen">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+      <button id="btn-fs" class="icon" title="Vollbild" aria-label="Vollbild">
+        <svg viewBox="0 0 24 24"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <canvas id="table"></canvas>
+  <div id="cursors"></div>
+
+  <footer id="bottombar">
+    <button id="btn-undo" class="pill"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span class="lbl">Rückgängig</span></button>
+    <button id="btn-new" class="pill"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-15-6.7L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/><path d="M16 16h5v5"/></svg><span class="lbl">Neu starten</span></button>
+    <button id="btn-hint" class="pill"><svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span class="lbl">Tipp</span></button>
+    <button id="btn-finish" class="pill accent" hidden><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="lbl">Fertigstellen</span></button>
+  </footer>
+
+  <div id="toast" role="status"></div>
+  <div id="loading">Lade…</div>
+
+  <!-- dialogs -->
+  <div class="modal" id="dlg-new" hidden>
+    <div class="card">
+      <h2>Neues Spiel?</h2>
+      <p id="new-text">Das laufende Spiel geht verloren.</p>
+      <div class="row end">
+        <button class="pill" data-close>Abbrechen</button>
+        <button class="pill accent" id="new-confirm">Neu starten</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="dlg-win" hidden>
+    <div class="card center">
+      <h2>Gewonnen!</h2>
+      <p id="win-stats"></p>
+      <div class="row center">
+        <button class="pill" data-close>Schließen</button>
+        <button class="pill accent" id="win-new">Neues Spiel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="dlg-settings" hidden>
+    <div class="card">
+      <h2>Einstellungen</h2>
+      <fieldset>
+        <legend>Karten ziehen <small>(ab dem nächsten Spiel)</small></legend>
+        <label><input type="radio" name="draw" value="1" /> 1 Karte</label>
+        <label><input type="radio" name="draw" value="3" /> 3 Karten</label>
+      </fieldset>
+      <label class="check"><input type="checkbox" id="set-penalty" /> Zeitstrafe (−2 Punkte alle 10 s) <small>(ab dem nächsten Spiel)</small></label>
+      <label class="check"><input type="checkbox" id="set-score" /> Punkte anzeigen</label>
+      <label class="check"><input type="checkbox" id="set-anim" /> Animationen</label>
+      <div class="row end"><button class="pill accent" data-close>Fertig</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="dlg-help" hidden>
+    <div class="card scroll">
+      <h2>So wird gespielt</h2>
+      <p><b>Ziel:</b> Alle Karten nach Farbe von Ass bis König auf die vier Ablagen oben rechts legen (♠ ♥ ♦ ♣).</p>
+      <ul>
+        <li>In den 7 Spalten legst du absteigend und abwechselnd rot/schwarz an.</li>
+        <li>Auf eine leere Spalte darf nur ein König.</li>
+        <li>Offene Stapel kannst du als Ganzes verschieben.</li>
+        <li>Klick auf den Stapel oben links zieht neue Karten. Ist er leer, wird der Ablagestapel umgedreht.</li>
+      </ul>
+      <p><b>Bedienung:</b> Karten ziehen und fallen lassen – oder einfach antippen, dann springt die Karte an einen passenden Platz. <kbd>Strg</kbd>+<kbd>Z</kbd> macht einen Zug rückgängig.</p>
+      <p><b>Mehrspieler:</b> Über 👥 einen Raum erstellen und den Link teilen. Alle spielen gemeinsam dieselbe Partie und sehen die Zeiger der anderen.</p>
+      <div class="row end"><button class="pill accent" data-close>Alles klar</button></div>
+    </div>
+  </div>
+
+  <div class="modal" id="dlg-mp" hidden>
+    <div class="card">
+      <h2>Mehrspieler</h2>
+      <div id="mp-form">
+        <label class="field">Dein Name<input id="mp-name" maxlength="20" autocomplete="nickname" placeholder="z. B. Anna" /></label>
+        <label class="field">Server<input id="mp-server" placeholder="wss://dein-server.onrender.com" autocapitalize="off" spellcheck="false" /></label>
+        <label class="field">Raumcode<input id="mp-room" maxlength="12" placeholder="z. B. K7M2Q" autocapitalize="characters" spellcheck="false" /></label>
+        <div class="row">
+          <button class="pill" id="mp-join">Beitreten</button>
+          <button class="pill accent" id="mp-create">Neuen Raum erstellen</button>
+        </div>
+        <p class="hint">Beim Erstellen wird dein aktuelles Spiel in den Raum übernommen.</p>
+      </div>
+      <div id="mp-room-view" hidden>
+        <p>Raum <b id="mp-code" class="code"></b> · <span id="mp-status"></span></p>
+        <label class="field">Einladungslink<input id="mp-link" readonly /></label>
+        <div class="row">
+          <button class="pill" id="mp-copy">Link kopieren</button>
+          <button class="pill danger" id="mp-leave">Raum verlassen</button>
+        </div>
+        <ul id="mp-players"></ul>
+      </div>
+      <p class="hint" id="mp-wake" hidden>Verbinde… Ein schlafender Server (Render Free) kann bis zu 1 Minute zum Aufwachen brauchen.</p>
+      <div class="row end"><button class="pill" data-close>Schließen</button></div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>

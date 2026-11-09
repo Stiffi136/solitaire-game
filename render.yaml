@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: solitaire-mp
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
