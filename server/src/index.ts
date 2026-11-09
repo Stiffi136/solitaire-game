@@ -151,7 +151,7 @@ wss.on('connection', (ws: WebSocket & { isAlive?: boolean }) => {
         const roomCode = String(msg.room ?? '').toUpperCase().slice(0, 12);
         if (!roomCode || !/^[A-Z0-9]+$/.test(roomCode)) {
           if (ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ t: 'error', message: 'Ungültiger Raumcode' } as ServerMsg));
+            ws.send(JSON.stringify({ t: 'error', message: 'Invalid room code' } as ServerMsg));
           }
           return;
         }

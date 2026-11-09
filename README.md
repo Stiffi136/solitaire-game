@@ -4,6 +4,8 @@
 
 Klondike solitaire in the browser, rendered with three.js. Single player runs offline (GitHub Pages); optional cooperative multiplayer through a WebSocket server (Docker, e.g. on Render).
 
+The UI is available in English (default) and German (⚙ settings).
+
 Specification: [SPEC.md](SPEC.md)
 
 ## Run locally
@@ -56,7 +58,7 @@ The server address is compiled into the build and is not shown in the UI. Withou
 
 ## Multiplayer
 
-- 👥 → enter a name → **Neuen Raum erstellen** (create room). The current game is taken over.
+- 👥 → enter a name → **Create new room**. The current game is taken over.
 - Copy and share the link (`…/?room=CODE`). Whoever opens it joins directly.
 - Everyone plays the same game. Pointers and dragged cards of the other players are visible live.
 - The server is authoritative: it checks every move with the same rules and sends the new state to everyone.

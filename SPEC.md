@@ -1,6 +1,6 @@
 # Solitaire 3D – Specification
 
-Status: v4 · UI language: German
+Status: v5 · UI languages: English (default) and German
 
 Mockup: `docs/mockup.png`
 
@@ -87,17 +87,19 @@ The **time penalty** can be switched on/off (default: on). It is stored in the g
 
 ### 5.1 User interface (HTML overlay)
 
+**Languages**: English (default) and German, selectable in the settings dialog and saved in `localStorage`. The switch applies immediately. All UI texts live in `client/src/i18n.ts`; static HTML uses `data-i18n*` attributes. Server error messages are English and translated in the client.
+
 **Top bar** (dark green, as in the mockup):
 - left: logo ♠ + "Solitaire"
-- right: `Zeit: mm:ss` · `Züge: n` · `Punkte: n`
+- right: `Time: mm:ss` · `Moves: n` · `Score: n`
 - icons: multiplayer 👥 (new, not in the mockup), help ?, settings ⚙, fullscreen ⛶
 - in multiplayer also: colored dots with the names of the players
 
-**Bottom bar** (outlined buttons, centered): `Rückgängig` (undo) · `Neu starten` (new game) · `Tipp` (hint). With auto finish, `Fertigstellen` (finish) appears as well.
+**Bottom bar** (outlined buttons, centered): `Undo` · `New game` · `Hint`. With auto finish, `Finish` appears as well.
 
 **Dialogs**:
 - Help: short explanation of rules and controls
-- Settings: draw 1/3 and time penalty on/off (both apply from the next game), show score on/off, animations on/off
+- Settings: language (English/German), draw 1/3 and time penalty on/off (both apply from the next game), show score on/off, animations on/off
 - New game: confirmation if a game is in progress
 - Win: time, moves, score, "New game" button
 - Game over: see 4.1
@@ -196,3 +198,4 @@ Server → client:
 - Multiplayer rights: all players are equal (everyone may start a new game and undo).
 - Joining by room code and invite link, no room list.
 - Server address is not configurable in the UI.
+- UI languages: English (default) and German.

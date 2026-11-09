@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -14,23 +14,23 @@
       <span class="lbl">Solitaire</span>
     </div>
     <div class="stats">
-      <span><span class="lbl">Zeit: </span><b id="time">00:00</b></span>
-      <span><span class="lbl">Züge: </span><b id="moves">0</b></span>
-      <span id="score-wrap"><span class="lbl">Punkte: </span><b id="score">0</b></span>
+      <span><span class="lbl"><span data-i18n="time"></span>: </span><b id="time">00:00</b></span>
+      <span><span class="lbl"><span data-i18n="moves"></span>: </span><b id="moves">0</b></span>
+      <span id="score-wrap"><span class="lbl"><span data-i18n="score"></span>: </span><b id="score">0</b></span>
     </div>
     <div id="players"></div>
     <div class="icons">
-      <button id="btn-mp" class="icon" title="Mehrspieler" aria-label="Mehrspieler">
+      <button id="btn-mp" class="icon" data-i18n-title="multiplayer">
         <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         <i id="mp-dot"></i>
       </button>
-      <button id="btn-help" class="icon" title="Hilfe" aria-label="Hilfe">
+      <button id="btn-help" class="icon" data-i18n-title="help">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
       </button>
-      <button id="btn-settings" class="icon" title="Einstellungen" aria-label="Einstellungen">
+      <button id="btn-settings" class="icon" data-i18n-title="settings">
         <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       </button>
-      <button id="btn-fs" class="icon" title="Vollbild" aria-label="Vollbild">
+      <button id="btn-fs" class="icon" data-i18n-title="fullscreen">
         <svg viewBox="0 0 24 24"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5"/></svg>
       </button>
     </div>
@@ -40,104 +40,101 @@
   <div id="cursors"></div>
 
   <footer id="bottombar">
-    <button id="btn-undo" class="pill"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span class="lbl">Rückgängig</span></button>
-    <button id="btn-new" class="pill"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-15-6.7L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/><path d="M16 16h5v5"/></svg><span class="lbl">Neu starten</span></button>
-    <button id="btn-hint" class="pill"><svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span class="lbl">Tipp</span></button>
-    <button id="btn-finish" class="pill accent" hidden><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="lbl">Fertigstellen</span></button>
+    <button id="btn-undo" class="pill"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg><span class="lbl" data-i18n="undo"></span></button>
+    <button id="btn-new" class="pill"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 0 0-15-6.7L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/><path d="M16 16h5v5"/></svg><span class="lbl" data-i18n="newGame"></span></button>
+    <button id="btn-hint" class="pill"><svg viewBox="0 0 24 24"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span class="lbl" data-i18n="hint"></span></button>
+    <button id="btn-finish" class="pill accent" hidden><svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg><span class="lbl" data-i18n="finish"></span></button>
   </footer>
 
   <div id="toast" role="status"></div>
-  <div id="loading">Lade…</div>
+  <div id="loading">Loading…</div>
 
-  <!-- dialogs -->
+  <!-- dialogs (texts come from client/src/i18n.ts) -->
   <div class="modal" id="dlg-new" hidden>
     <div class="card">
-      <h2>Neues Spiel?</h2>
-      <p id="new-text">Das laufende Spiel geht verloren.</p>
+      <h2 data-i18n="newGameTitle"></h2>
+      <p id="new-text"></p>
       <div class="row end">
-        <button class="pill" data-close>Abbrechen</button>
-        <button class="pill accent" id="new-confirm">Neu starten</button>
+        <button class="pill" data-close data-i18n="cancel"></button>
+        <button class="pill accent" id="new-confirm" data-i18n="newGame"></button>
       </div>
     </div>
   </div>
 
   <div class="modal" id="dlg-win" hidden>
     <div class="card center">
-      <h2>Gewonnen!</h2>
+      <h2 data-i18n="winTitle"></h2>
       <p id="win-stats"></p>
       <div class="row center">
-        <button class="pill" data-close>Schließen</button>
-        <button class="pill accent" id="win-new">Neues Spiel</button>
+        <button class="pill" data-close data-i18n="close"></button>
+        <button class="pill accent" id="win-new" data-i18n="newGame"></button>
       </div>
     </div>
   </div>
 
   <div class="modal" id="dlg-over" hidden>
     <div class="card center">
-      <h2>Keine Züge mehr</h2>
-      <p>Es ist kein sinnvoller Zug mehr möglich – auch nicht mit den Karten im Stapel.</p>
+      <h2 data-i18n="overTitle"></h2>
+      <p data-i18n="overText"></p>
       <p id="over-stats"></p>
       <div class="row center">
-        <button class="pill" id="over-undo">Rückgängig</button>
-        <button class="pill accent" id="over-new">Neues Spiel</button>
+        <button class="pill" id="over-undo" data-i18n="undo"></button>
+        <button class="pill accent" id="over-new" data-i18n="newGame"></button>
       </div>
     </div>
   </div>
 
   <div class="modal" id="dlg-settings" hidden>
     <div class="card">
-      <h2>Einstellungen</h2>
+      <h2 data-i18n="settings"></h2>
       <fieldset>
-        <legend>Karten ziehen <small>(ab dem nächsten Spiel)</small></legend>
-        <label><input type="radio" name="draw" value="1" /> 1 Karte</label>
-        <label><input type="radio" name="draw" value="3" /> 3 Karten</label>
+        <legend><span data-i18n="language"></span></legend>
+        <label><input type="radio" name="lang" value="en" /> English</label>
+        <label><input type="radio" name="lang" value="de" /> Deutsch</label>
       </fieldset>
-      <label class="check"><input type="checkbox" id="set-penalty" /> Zeitstrafe (−2 Punkte alle 10 s) <small>(ab dem nächsten Spiel)</small></label>
-      <label class="check"><input type="checkbox" id="set-score" /> Punkte anzeigen</label>
-      <label class="check"><input type="checkbox" id="set-anim" /> Animationen</label>
-      <div class="row end"><button class="pill accent" data-close>Fertig</button></div>
+      <fieldset>
+        <legend><span data-i18n="drawLegend"></span> <small data-i18n="fromNextGame"></small></legend>
+        <label><input type="radio" name="draw" value="1" /> <span data-i18n="draw1"></span></label>
+        <label><input type="radio" name="draw" value="3" /> <span data-i18n="draw3"></span></label>
+      </fieldset>
+      <label class="check"><input type="checkbox" id="set-penalty" /> <span><span data-i18n="timePenalty"></span> <small data-i18n="fromNextGame"></small></span></label>
+      <label class="check"><input type="checkbox" id="set-score" /> <span data-i18n="showScore"></span></label>
+      <label class="check"><input type="checkbox" id="set-anim" /> <span data-i18n="animations"></span></label>
+      <div class="row end"><button class="pill accent" data-close data-i18n="done"></button></div>
     </div>
   </div>
 
   <div class="modal" id="dlg-help" hidden>
     <div class="card scroll">
-      <h2>So wird gespielt</h2>
-      <p><b>Ziel:</b> Alle Karten nach Farbe von Ass bis König auf die vier Ablagen oben rechts legen (♠ ♥ ♦ ♣).</p>
-      <ul>
-        <li>In den 7 Spalten legst du absteigend und abwechselnd rot/schwarz an.</li>
-        <li>Auf eine leere Spalte darf nur ein König.</li>
-        <li>Offene Stapel kannst du als Ganzes verschieben.</li>
-        <li>Klick auf den Stapel oben links zieht neue Karten. Ist er leer, wird der Ablagestapel umgedreht.</li>
-      </ul>
-      <p><b>Bedienung:</b> Karten ziehen und fallen lassen – oder einfach antippen, dann springt die Karte an einen passenden Platz. <kbd>Strg</kbd>+<kbd>Z</kbd> macht einen Zug rückgängig.</p>
-      <p><b>Mehrspieler:</b> Über 👥 einen Raum erstellen und den Link teilen. Alle spielen gemeinsam dieselbe Partie und sehen die Zeiger der anderen.</p>
-      <div class="row end"><button class="pill accent" data-close>Alles klar</button></div>
+      <h2 data-i18n="helpTitle"></h2>
+      <div data-i18n-html="helpHtml"></div>
+      <div class="row end"><button class="pill accent" data-close data-i18n="gotIt"></button></div>
     </div>
   </div>
 
   <div class="modal" id="dlg-mp" hidden>
     <div class="card">
-      <h2>Mehrspieler</h2>
+      <h2 data-i18n="multiplayer"></h2>
       <div id="mp-form">
-        <label class="field">Dein Name<input id="mp-name" maxlength="20" autocomplete="nickname" placeholder="z. B. Anna" /></label>
-        <label class="field">Raumcode<input id="mp-room" maxlength="12" placeholder="z. B. K7M2Q" autocapitalize="characters" spellcheck="false" /></label>
+        <label class="field"><span data-i18n="yourName"></span><input id="mp-name" maxlength="20" autocomplete="nickname" data-i18n-placeholder="namePlaceholder" /></label>
+        <label class="field"><span data-i18n="roomCode"></span><input id="mp-room" maxlength="12" data-i18n-placeholder="roomPlaceholder" autocapitalize="characters" spellcheck="false" /></label>
         <div class="row">
-          <button class="pill" id="mp-join">Beitreten</button>
-          <button class="pill accent" id="mp-create">Neuen Raum erstellen</button>
+          <button class="pill" id="mp-join" data-i18n="join"></button>
+          <button class="pill accent" id="mp-create" data-i18n="createRoom"></button>
         </div>
-        <p class="hint">Beim Erstellen wird dein aktuelles Spiel in den Raum übernommen.</p>
+        <p class="hint" data-i18n="createHint"></p>
       </div>
       <div id="mp-room-view" hidden>
-        <p>Raum <b id="mp-code" class="code"></b> · <span id="mp-status"></span></p>
-        <label class="field">Einladungslink<input id="mp-link" readonly /></label>
+        <p><span data-i18n="room"></span> <b id="mp-code" class="code"></b> · <span id="mp-status"></span></p>
+        <label class="field"><span data-i18n="inviteLink"></span><input id="mp-link" readonly /></label>
         <div class="row">
-          <button class="pill" id="mp-copy">Link kopieren</button>
-          <button class="pill danger" id="mp-leave">Raum verlassen</button>
+          <button class="pill" id="mp-copy" data-i18n="copyLink"></button>
+          <button class="pill danger" id="mp-leave" data-i18n="leaveRoom"></button>
         </div>
         <ul id="mp-players"></ul>
       </div>
-      <p class="hint" id="mp-wake" hidden>Verbinde… Ein schlafender Server kann bis zu 1 Minute zum Aufwachen brauchen.</p>
-      <div class="row end"><button class="pill" data-close>Schließen</button></div>
+      <p class="hint" id="mp-wake" data-i18n="wake" hidden></p>
+      <div class="row end"><button class="pill" data-close data-i18n="close"></button></div>
     </div>
   </div>
 

@@ -6,6 +6,7 @@ import {
 import type { PlayerInfo, ServerMsg } from '../../shared/protocol';
 import { NetClient, NetStatus, normalizeServerUrl, throttle } from './net';
 import { TableRenderer } from './renderer';
+import { applyStatic, Lang, setLang, t } from './i18n';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 
@@ -14,12 +15,12 @@ function showFatal(msg: string) {
   const l = $('loading');
   l.hidden = false;
   l.classList.add('err');
-  l.textContent = 'Fehler: ' + msg;
+  l.textContent = t('error', { msg });
 }
 
 // ---------- settings & persistence ----------
 
-interface Settings { drawCount: DrawCount; timePenalty: boolean; showScore: boolean; animations: boolean; name: string }
+interface Settings { drawCount: DrawCount; timePenalty: boolean; showScore: boolean; animations: boolean; name: string; lang: Lang }
 const SETTINGS_KEY = 'solitaire.settings';
 const GAME_KEY = 'solitaire.game';
 /** Multiplayer server, fixed at build time (VITE_SERVER_URL) or derived for local dev. */
@@ -30,10 +31,12 @@ const SERVER_URL = normalizeServerUrl((import.meta.env.VITE_SERVER_URL as string
 const settings: Settings = {
   drawCount: 1, timePenalty: true, showScore: true,
   animations: !matchMedia('(prefers-reduced-motion: reduce)').matches,
-  name: '',
+  name: '', lang: 'en',
   ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'),
 };
 const saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+setLang(settings.lang);
+applyStatic();
 
 function loadGame(): GameState | null {
   try {
@@ -104,14 +107,15 @@ function checkGameOver() {
     const st = game.state;
     if (pending > 0 || st.version === overShownFor || !isGameOver(st)) return;
     overShownFor = st.version;
-    $('over-stats').innerHTML = `Zeit <b>${fmtTime(elapsedSeconds(st))}</b> · Züge <b>${st.moves}</b>`
-      + (settings.showScore ? ` · Punkte <b>${displayScore(st)}</b>` : '');
+    $('over-stats').innerHTML = statsLine(st);
     openModal('dlg-over');
   }, 700);
 }
 
 // ---------- HUD ----------
 
+const statsLine = (st: GameState) => `${t('time')} <b>${fmtTime(elapsedSeconds(st))}</b> · ${t('moves')} <b>${st.moves}</b>`
+  + (settings.showScore ? ` · ${t('score')} <b>${displayScore(st)}</b>` : '');
 const fmtTime = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 
 function updateHud() {
@@ -161,9 +165,7 @@ function startNewGame() {
 $('btn-new').onclick = () => {
   const st = game.state;
   if (st.moves === 0 || st.wonAt != null) return startNewGame();
-  $('new-text').textContent = online
-    ? 'Das laufende Spiel geht für alle im Raum verloren.'
-    : 'Das laufende Spiel geht verloren.';
+  $('new-text').textContent = t(online ? 'newGameTextOnline' : 'newGameText');
   openModal('dlg-new');
 };
 $('new-confirm').onclick = startNewGame;
@@ -174,7 +176,7 @@ $('btn-undo').onclick = () => dispatch({ type: 'undo' });
 $('btn-hint').onclick = () => {
   const h = findHint(game.state);
   if (h) renderer.showHint(h);
-  else toast(game.state.wonAt != null ? 'Schon gewonnen!' : 'Keine Züge mehr möglich.');
+  else toast(t(game.state.wonAt != null ? 'alreadyWon' : 'noMoves'));
 };
 
 let finishing = 0;
@@ -189,8 +191,7 @@ $('btn-finish').onclick = () => {
 
 function showWin() {
   const st = game.state;
-  $('win-stats').innerHTML = `Zeit <b>${fmtTime(elapsedSeconds(st))}</b> · Züge <b>${st.moves}</b>`
-    + (settings.showScore ? ` · Punkte <b>${displayScore(st)}</b>` : '');
+  $('win-stats').innerHTML = statsLine(st);
   openModal('dlg-win');
 }
 
@@ -200,6 +201,7 @@ $('btn-settings').onclick = () => {
   $<HTMLInputElement>('set-penalty').checked = settings.timePenalty;
   $<HTMLInputElement>('set-score').checked = settings.showScore;
   $<HTMLInputElement>('set-anim').checked = settings.animations;
+  document.querySelectorAll<HTMLInputElement>('input[name=lang]').forEach((r) => (r.checked = r.value === settings.lang));
   openModal('dlg-settings');
 };
 $('dlg-settings').addEventListener('change', () => {
@@ -209,6 +211,8 @@ $('dlg-settings').addEventListener('change', () => {
   settings.showScore = $<HTMLInputElement>('set-score').checked;
   settings.animations = $<HTMLInputElement>('set-anim').checked;
   renderer.animations = settings.animations;
+  const l = document.querySelector<HTMLInputElement>('input[name=lang]:checked')?.value as Lang | undefined;
+  if (l && l !== settings.lang) { settings.lang = l; setLang(l); applyStatic(); refreshTexts(); }
   saveSettings();
   updateHud();
 });
@@ -220,7 +224,7 @@ const fsBtn = $('btn-fs');
 if (!document.fullscreenEnabled) fsBtn.hidden = true;
 fsBtn.onclick = () => {
   if (document.fullscreenElement) void document.exitFullscreen();
-  else void document.documentElement.requestFullscreen().catch(() => toast('Vollbild nicht möglich.'));
+  else void document.documentElement.requestFullscreen().catch(() => toast(t('fullscreenFailed')));
 };
 document.addEventListener('fullscreenchange', () => renderer.resize());
 
@@ -254,7 +258,7 @@ function renderMpDialog() {
     const li = document.createElement('li');
     const dot = document.createElement('i');
     dot.style.background = p.color;
-    li.append(dot, document.createTextNode(p.name + (p.id === myId ? ' (du)' : '')));
+    li.append(dot, document.createTextNode(p.name + (p.id === myId ? ` ${t('you')}` : '')));
     ul.append(li);
   }
 }
@@ -270,7 +274,7 @@ function renderPlayers() {
     const dot = document.createElement('i');
     dot.style.background = p.color;
     const name = document.createElement('span');
-    name.textContent = p.id === myId ? `${p.name} (du)` : p.name;
+    name.textContent = p.id === myId ? `${p.name} ${t('you')}` : p.name;
     chip.append(dot, name);
     box.append(chip);
   }
@@ -282,7 +286,7 @@ $('btn-mp').onclick = () => { renderMpDialog(); openModal('dlg-mp'); };
 
 function readForm(): { name: string; server: string } | null {
   const name = $<HTMLInputElement>('mp-name').value.trim().slice(0, 20);
-  if (!name) { toast('Bitte gib einen Namen ein.'); $('mp-name').focus(); return null; }
+  if (!name) { toast(t('enterName')); $('mp-name').focus(); return null; }
   settings.name = name;
   saveSettings();
   return { name, server: SERVER_URL };
@@ -296,7 +300,7 @@ $('mp-join').onclick = () => {
   const f = readForm();
   const room = cleanCode($<HTMLInputElement>('mp-room').value);
   if (!f) return;
-  if (!room) { toast('Bitte gib einen Raumcode ein.'); $('mp-room').focus(); return; }
+  if (!room) { toast(t('enterRoom')); $('mp-room').focus(); return; }
   connect(f.server, room, f.name);
 };
 $('mp-leave').onclick = () => { leave(); renderMpDialog(); };
@@ -304,16 +308,18 @@ $('mp-copy').onclick = async () => {
   const link = $<HTMLInputElement>('mp-link').value;
   try {
     if (navigator.share && matchMedia('(pointer: coarse)').matches) await navigator.share({ title: 'Solitaire', url: link });
-    else { await navigator.clipboard.writeText(link); toast('Link kopiert.'); }
+    else { await navigator.clipboard.writeText(link); toast(t('linkCopied')); }
   } catch {
     $<HTMLInputElement>('mp-link').select();
   }
 };
 
+let netStatus: NetStatus = 'closed';
 function setStatus(s: NetStatus) {
+  netStatus = s;
   const dot = $('mp-dot');
   dot.className = s === 'open' ? 'on' : s === 'closed' ? '' : 'wait';
-  $('mp-status').textContent = { connecting: 'verbinde…', open: 'verbunden', reconnecting: 'Verbindung verloren, verbinde neu…', closed: 'getrennt' }[s];
+  $('mp-status').textContent = t(`st_${s}`);
   $('mp-wake').hidden = !(s === 'connecting' || s === 'reconnecting');
   if (s !== 'open' && online) { online = false; renderer.clearAllRemote(); clearCursors(); renderPlayers(); }
 }
@@ -362,7 +368,7 @@ function onServerMessage(m: ServerMsg) {
       lastWon = m.state.wonAt != null;
       renderer.setState(game.state);
       updateHud(); renderPlayers(); renderMpDialog(); checkGameOver();
-      toast(`Verbunden mit Raum ${m.room}`);
+      toast(t('connectedTo', { room: m.room }));
       break;
     case 'state': {
       if (m.by === myId || m.by === undefined) pending = Math.max(0, pending - 1);
@@ -375,7 +381,7 @@ function onServerMessage(m: ServerMsg) {
     case 'players': {
       const prev = players;
       players = m.players;
-      for (const p of m.players) if (!prev.some((q) => q.id === p.id) && p.id !== myId) toast(`${p.name} ist beigetreten`);
+      for (const p of m.players) if (!prev.some((q) => q.id === p.id) && p.id !== myId) toast(t('playerJoined', { name: p.name }));
       for (const p of prev) if (!m.players.some((q) => q.id === p.id)) { removeCursor(p.id); renderer.clearRemoteDrag(p.id); }
       renderPlayers(); renderMpDialog();
       break;
@@ -383,7 +389,7 @@ function onServerMessage(m: ServerMsg) {
     case 'cursor': setCursor(m.id, m.x, m.y); break;
     case 'drag': renderer.setRemoteDrag(m.id, m.cards, m.x, m.y); break;
     case 'dragEnd': renderer.clearRemoteDrag(m.id); break;
-    case 'error': toast(m.message); break;
+    case 'error': toast(m.message === 'Invalid room code' ? t('invalidRoom') : m.message); break;
   }
 }
 
@@ -434,6 +440,15 @@ function clearCursors() { for (const id of [...cursors.keys()]) removeCursor(id)
     if (settings.name) connect(SERVER_URL, room, settings.name);
     else { renderMpDialog(); openModal('dlg-mp'); }
   }
+}
+
+/** Re-renders texts that are built in code (after a language change). */
+function refreshTexts() {
+  setStatus(netStatus);
+  renderMpDialog();
+  renderPlayers();
+  if (!$('dlg-over').hidden) $('over-stats').innerHTML = statsLine(game.state);
+  if (!$('dlg-win').hidden) $('win-stats').innerHTML = statsLine(game.state);
 }
 
 // a saved game may already be over
