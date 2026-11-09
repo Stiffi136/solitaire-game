@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {
-  Action, canMove, findAutoMove, findCard, FOUNDATIONS, GameState, Hint, movableStack, PileId, rankOf, TABLEAUS,
+  Action, canMove, findAutoMove, findCard, FOUNDATIONS, GameState, movableStack, PileId, rankOf, TABLEAUS,
 } from '../../shared/klondike';
+import type { Hint } from '../../shared/solver';
 import * as tex from './textures';
 
 export const CARD_W = 1;

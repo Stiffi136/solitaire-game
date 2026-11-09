@@ -12,5 +12,5 @@
     "isolatedModules": true,
     "esModuleInterop": true
   },
-  "include": ["client/src", "shared", "server/src"]
+  "include": ["client/src", "shared", "server/src", "tests"]
 }

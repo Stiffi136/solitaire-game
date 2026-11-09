@@ -11,7 +11,8 @@
     "server:build": "esbuild server/src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=server/dist/server.cjs",
     "server:start": "node server/dist/server.cjs",
     "typecheck": "tsc --noEmit",
-    "dev:all": "npm run server:dev & npm run dev -- --host; wait"
+    "dev:all": "npm run server:dev & npm run dev -- --host; wait",
+    "test:solver": "tsx tests/solver-check.ts"
   },
   "dependencies": {
     "three": "^0.187.0",

@@ -153,7 +153,21 @@ function addScore(state: GameState, delta: number) {
 }
 
 function clone(state: GameState): GameState {
-  return JSON.parse(JSON.stringify(state));
+  return {
+    piles: Object.fromEntries(
+      ALL_PILES.map((p) => [p, [...state.piles[p]]]),
+    ) as Record<PileId, number[]>,
+    faceUp: [...state.faceUp],
+    seed: state.seed,
+    drawCount: state.drawCount,
+    timePenalty: state.timePenalty,
+    moves: state.moves,
+    score: state.score,
+    recycles: state.recycles,
+    startedAt: state.startedAt,
+    wonAt: state.wonAt,
+    version: state.version,
+  };
 }
 
 /** Applies an action. Returns false (and changes nothing) if it is not allowed. */
@@ -256,54 +270,6 @@ export function findAutoMove(state: GameState, id: number): PileId | null {
     if (!(isTableau(loc.pile) && loc.index === 0)) empty ??= t;
   }
   return empty;
-}
-
-export type Hint = { type: 'move'; cardId: number; to: PileId } | { type: 'draw' };
-
-/** Finds a useful move, or null if nothing is left. */
-export function findHint(state: GameState): Hint | null {
-  if (state.wonAt != null) return null;
-  const tops: number[] = [];
-  if (state.piles.waste.length) tops.push(top(state.piles.waste));
-  for (const t of TABLEAUS) if (state.piles[t].length) tops.push(top(state.piles[t]));
-  // 1. to foundation
-  for (const id of tops) {
-    const f = FOUNDATIONS[suitOf(id)];
-    if (canMove(state, id, f)) return { type: 'move', cardId: id, to: f };
-  }
-  // 2. tableau stacks that reveal a card or empty a column for a king
-  const kingWaiting = hasBuriedKing(state);
-  for (const t of TABLEAUS) {
-    const pile = state.piles[t];
-    const first = pile.findIndex((id) => state.faceUp[id]);
-    if (first < 0) continue;
-    const id = pile[first];
-    if (first === 0 && (rankOf(id) === 13 || !kingWaiting)) continue;
-    for (const dest of TABLEAUS) {
-      if (dest !== t && state.piles[dest].length && canMove(state, id, dest)) return { type: 'move', cardId: id, to: dest };
-    }
-    if (first > 0 && rankOf(id) === 13) {
-      const emptyCol = TABLEAUS.find((d) => state.piles[d].length === 0);
-      if (emptyCol) return { type: 'move', cardId: id, to: emptyCol };
-    }
-  }
-  // 3. waste to tableau
-  if (state.piles.waste.length) {
-    const id = top(state.piles.waste);
-    for (const dest of TABLEAUS) if (canMove(state, id, dest)) return { type: 'move', cardId: id, to: dest };
-  }
-  // 4. draw
-  if (state.piles.stock.length || state.piles.waste.length) return { type: 'draw' };
-  return null;
-}
-
-function hasBuriedKing(state: GameState): boolean {
-  if (state.piles.waste.length && rankOf(top(state.piles.waste)) === 13) return true;
-  return TABLEAUS.some((t) => {
-    const pile = state.piles[t];
-    const first = pile.findIndex((id) => state.faceUp[id]);
-    return first > 0 && rankOf(pile[first]) === 13;
-  });
 }
 
 /** True when stock and waste are empty and every card is face up. */

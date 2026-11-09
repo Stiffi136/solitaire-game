@@ -22,7 +22,8 @@ Klondike solitaire in the browser, rendered with three.js. Single player runs fu
 ```
 client/            index.html, src/ (main, renderer, textures, net, style)
 server/src/        index.ts (HTTP + WebSocket)
-shared/            klondike.ts (rules), protocol.ts (messages)
+shared/            klondike.ts (rules), solver.ts (hint, game over), protocol.ts (messages)
+tests/             solver-check.ts
 Dockerfile         multi-stage, server only
 render.yaml        Render blueprint
 .github/workflows/deploy.yml   build and deploy to Pages
@@ -47,8 +48,13 @@ render.yaml        Render blueprint
 
 - The game is over when it is not won and **no progress is possible any more**, not even through a sequence of moves.
 - Progress means: a hidden tableau card is revealed, a card leaves stock/waste, or the game is won.
-- Detection: direct progress moves are checked first, then a bounded breadth-first search over all legal moves (draws and foundation-to-tableau moves included). If the search hits its limit, the game counts as **not** over (no false game over).
-- The hint uses the same logic: it returns the first move on the shortest path to progress, so following hints never loops.
+- Code: `shared/solver.ts` (`findHint`, `isGameOver`).
+- Detection: direct progress moves are checked first (playable waste card, revealing move; aces and twos always go to the foundation first). Otherwise a breadth-first search runs over all legal tableau and foundation moves, including foundation-to-tableau moves.
+- Search state: inside the search, hidden cards stay hidden and stock/waste keep their cards, so a state is only the tableau columns and the foundation heights. Drawing does not change the tableau, so the cards that can reach the top of the waste by drawing are computed once; a state counts as progress as soon as one of them can be played.
+- The search visits at most 200,000 states. If it hits this limit, the game counts as **not** over (never a false game over). In tests this happens in about 1 of 600 games.
+- The hint uses the same logic: it returns the first move on a shortest path to progress, so following hints never loops.
+- The client runs the search in a Web Worker (`client/src/solver.worker.ts`), so a long search (up to about 1 s) does not block the UI. A new request cancels a running one.
+- Test: `npm run test:solver` (bot on 200 games: no illegal hint, no loop; independent search on game-over states: no false game over). It also runs in the Pages workflow.
 - UI: a "No moves left" dialog with time, moves, score and the buttons "Undo" and "New game". It is shown once per game state, about 0.7 s after the last change. In multiplayer, every player sees it.
 
 ### 4.2 Score (Windows standard scoring)

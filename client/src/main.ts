@@ -1,8 +1,9 @@
 import './style.css';
 import {
-  Action, applyAction, canAutoFinish, createGame, displayScore, DrawCount, elapsedSeconds, findHint, Game,
-  GameState, isGameOver, isValidState, newGame, nextFinishMove, randomSeed,
+  Action, applyAction, canAutoFinish, createGame, displayScore, DrawCount, elapsedSeconds, Game,
+  GameState, isValidState, newGame, nextFinishMove, randomSeed,
 } from '../../shared/klondike';
+import { SolverClient } from './solverClient';
 import type { PlayerInfo, ServerMsg } from '../../shared/protocol';
 import { NetClient, NetStatus, normalizeServerUrl, throttle } from './net';
 import { TableRenderer } from './renderer';
@@ -97,16 +98,22 @@ function stateChanged() {
   checkGameOver();
 }
 
-// Game over: checked shortly after the last change, shown once per state.
+// Game over: checked in a worker shortly after the last change, shown once per state.
+const overSolver = new SolverClient();
+const hintSolver = new SolverClient();
 let overTimer = 0;
 let overShownFor = -1;
 function checkGameOver() {
   clearTimeout(overTimer);
   closeModal('dlg-over');
-  overTimer = window.setTimeout(() => {
+  overTimer = window.setTimeout(async () => {
     const st = game.state;
-    if (pending > 0 || st.version === overShownFor || !isGameOver(st)) return;
+    if (st.wonAt != null || pending > 0 || st.version === overShownFor) return;
+    const hint = await overSolver.hint(st);
+    // null = no progress possible; undefined = cancelled; ignore if the game changed meanwhile
+    if (hint !== null || game.state !== st || pending > 0) return;
     overShownFor = st.version;
+    $<HTMLButtonElement>('over-undo').disabled = !online && game.history.length === 0;
     $('over-stats').innerHTML = statsLine(st);
     openModal('dlg-over');
   }, 700);
@@ -173,10 +180,13 @@ $('win-new').onclick = startNewGame;
 $('over-new').onclick = startNewGame;
 $('over-undo').onclick = () => { closeModal('dlg-over'); dispatch({ type: 'undo' }); };
 $('btn-undo').onclick = () => dispatch({ type: 'undo' });
-$('btn-hint').onclick = () => {
-  const h = findHint(game.state);
+$('btn-hint').onclick = async () => {
+  const st = game.state;
+  if (st.wonAt != null) return toast(t('alreadyWon'));
+  const h = await hintSolver.hint(st);
+  if (h === undefined || game.state !== st) return;
   if (h) renderer.showHint(h);
-  else toast(t(game.state.wonAt != null ? 'alreadyWon' : 'noMoves'));
+  else toast(t('noMoves'));
 };
 
 let finishing = 0;

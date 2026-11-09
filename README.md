@@ -32,7 +32,8 @@ In **Codespaces** the server address is detected automatically. Port 8080 must b
 |---|---|
 | `client/` | Vite frontend (three.js renderer, UI, WebSocket client) |
 | `server/` | Node WebSocket server (`ws`), bundled into one file with esbuild |
-| `shared/` | Game rules (`klondike.ts`) and protocol (`protocol.ts`), used by both |
+| `shared/` | Game rules (`klondike.ts`), hint/game-over solver (`solver.ts`), protocol (`protocol.ts`) |
+| `tests/` | Solver check: `npm run test:solver` |
 
 ## Deployment
 
