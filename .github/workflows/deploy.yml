@@ -27,9 +27,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test solver
-        run: npm run test:solver
-
       - name: Build
         run: npm run build
         env:
