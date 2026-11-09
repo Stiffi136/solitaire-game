@@ -7,7 +7,7 @@ import { SolverClient } from './solverClient';
 import type { PlayerInfo, ServerMsg } from '../../shared/protocol';
 import { NetClient, NetStatus, normalizeServerUrl, throttle } from './net';
 import { TableRenderer } from './renderer';
-import { applyStatic, Lang, setLang, t } from './i18n';
+import { applyStatic, Lang, LANGS, setLang, t } from './i18n';
 
 const CHEAT_LABEL = { win: 'cheatWin', lose: 'cheatLose', hard: 'cheatHard' } as const;
 
@@ -40,6 +40,11 @@ const settings: Settings = {
   ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'),
 };
 const saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+// ?lang=en|de in the address sets (and saves) the language
+{
+  const urlLang = new URLSearchParams(location.search).get('lang')?.toLowerCase();
+  if (urlLang && (LANGS as string[]).includes(urlLang)) { settings.lang = urlLang as Lang; saveSettings(); }
+}
 setLang(settings.lang);
 applyStatic();
 

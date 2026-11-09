@@ -4,7 +4,7 @@
 
 Klondike solitaire in the browser, rendered with three.js. Single player runs offline (GitHub Pages); optional cooperative multiplayer through a WebSocket server (Docker, e.g. on Render).
 
-The UI is available in English (default) and German (⚙ settings).
+The UI is available in English (default) and German (⚙ settings, or `?lang=de` / `?lang=en` in the address, e.g. https://stiffi136.github.io/solitaire-game/?lang=de).
 
 Specification: [SPEC.md](SPEC.md)
 

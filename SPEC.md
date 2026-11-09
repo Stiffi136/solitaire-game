@@ -115,7 +115,7 @@ The **time penalty** can be switched on/off (default: on). It is stored in the g
 
 ### 5.1 User interface (HTML overlay)
 
-**Languages**: English (default) and German, selectable in the settings dialog and saved in `localStorage`. The switch applies immediately. All UI texts live in `client/src/i18n.ts`; static HTML uses `data-i18n*` attributes. Server error messages are English and translated in the client.
+**Languages**: English (default) and German, selectable in the settings dialog and saved in `localStorage`. The URL parameter `?lang=en` or `?lang=de` (case-insensitive) also sets and saves the language; unknown values are ignored. It can be combined with an invite link (`?room=CODE&lang=de`); invite links themselves do not carry the language. The switch applies immediately. All UI texts live in `client/src/i18n.ts`; static HTML uses `data-i18n*` attributes. Server error messages are English and translated in the client.
 
 **Top bar** (dark green, as in the mockup):
 - left: logo ♠ + "Solitaire"
