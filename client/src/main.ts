@@ -23,7 +23,9 @@ interface Settings { drawCount: DrawCount; timePenalty: boolean; showScore: bool
 const SETTINGS_KEY = 'solitaire.settings';
 const GAME_KEY = 'solitaire.game';
 const defaultServer = (import.meta.env.VITE_SERVER_URL as string | undefined)
-  || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'ws://localhost:8080' : '');
+  || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'ws://localhost:8080' : '')
+  // GitHub Codespaces: <name>-5173.app.github.dev -> <name>-8080.app.github.dev
+  || (location.hostname.endsWith('.app.github.dev') ? `wss://${location.hostname.replace(/-5173\./, '-8080.')}` : '');
 const settings: Settings = {
   drawCount: 1, timePenalty: true, showScore: true,
   animations: !matchMedia('(prefers-reduced-motion: reduce)').matches,

@@ -1,0 +1,29 @@
+{
+  "name": "Solitaire 3D",
+  "image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "forwardPorts": [5173, 8080],
+  "portsAttributes": {
+    "5173": { "label": "Frontend (Vite)", "onAutoForward": "openBrowser" },
+    "8080": { "label": "Multiplayer-Server", "onAutoForward": "silent" }
+  },
+  "postCreateCommand": "npm ci",
+  "postAttachCommand": "echo 'Start: npm run dev:all  (Frontend :5173, Server :8080)'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "ms-azuretools.vscode-docker",
+        "github.vscode-github-actions"
+      ],
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "editor.formatOnSave": false
+      }
+    }
+  }
+}

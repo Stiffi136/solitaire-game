@@ -10,7 +10,8 @@
     "server:dev": "tsx watch server/src/index.ts",
     "server:build": "esbuild server/src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=server/dist/server.cjs",
     "server:start": "node server/dist/server.cjs",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "dev:all": "npm run server:dev & npm run dev -- --host; wait"
   },
   "dependencies": {
     "three": "^0.187.0",

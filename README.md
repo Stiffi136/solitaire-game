@@ -14,6 +14,14 @@ npm run dev          # Frontend auf http://localhost:5173
 
 Auf `localhost` ist `ws://localhost:8080` als Server vorausgewählt.
 
+Oder beides zusammen: `npm run dev:all`.
+
+### Dev Container
+
+`.devcontainer/` enthält eine fertige Umgebung (Node 22, Docker-in-Docker, GitHub CLI). In VS Code: **Reopen in Container**, oder auf GitHub: **Code → Codespaces**. Danach `npm run dev:all`.
+
+In **Codespaces** wird die Server-Adresse automatisch erkannt. Port 8080 muss dafür auf **Public** stehen (Tab „Ports“ → Rechtsklick → Port Visibility), sonst blockiert GitHub die WebSocket-Verbindung von Mitspielern.
+
 ## Struktur
 
 | Ordner | Inhalt |
