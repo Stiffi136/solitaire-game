@@ -26,7 +26,7 @@ export function pileBase(p: PileId): { x: number; y: number } {
 }
 
 interface Target { x: number; y: number; z: number; faceUp: boolean; shadow: boolean }
-interface Fly { x: number; y: number; vx: number; vy: number; delay: number; z: number }
+interface Fly { x: number; y: number; vx: number; vy: number; delay: number; z: number; launched: boolean }
 interface CardView {
   id: number;
   group: THREE.Group;
@@ -385,7 +385,7 @@ export class TableRenderer {
         c.fly = {
           x: c.pos.x, y: c.pos.y,
           vx: dir * (1.5 + Math.random() * 3) * (Math.random() < 0.25 ? -1 : 1),
-          vy: Math.random() * 3, delay: order * 0.11, z: 6 + order * 0.01,
+          vy: Math.random() * 3, delay: 0.7 + order * 0.11, z: 6 + order * 0.01, launched: false,
         };
         order++;
       }
@@ -419,10 +419,16 @@ export class TableRenderer {
       let lift = 0;
       const dj = dragIndex.get(c.id);
       const rj = remoteIndex.get(c.id);
-      if (c.fly) {
+      if (c.fly && c.fly.delay > 0) {
+        // waiting for launch: first glide to the foundation like a normal move
+        c.fly.delay -= dt;
+        c.pos.x += (t.x - c.pos.x) * k; c.pos.y += (t.y - c.pos.y) * k;
+        c.pos.z = Math.max(c.pos.z, t.z);
+        lift = Math.min(Math.hypot(t.x - c.pos.x, t.y - c.pos.y) * 0.5, 1.5);
+      } else if (c.fly) {
         const f = c.fly;
-        if (f.delay > 0) f.delay -= dt;
-        else {
+        if (!f.launched) { f.launched = true; f.x = c.pos.x; f.y = c.pos.y; }
+        {
           f.vy -= 16 * dt; f.x += f.vx * dt; f.y += f.vy * dt;
           const floor = this.view.bottom + CARD_H / 2;
           if (f.y < floor) { f.y = floor; f.vy = Math.abs(f.vy) * 0.72 + 1.2; }

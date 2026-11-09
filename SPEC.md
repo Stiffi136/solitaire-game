@@ -63,7 +63,18 @@ render.yaml        Render blueprint
   - Any change of the game (also by another player) resets the button to "Hint".
 - In multiplayer, game over is only shown to the player who pressed "Hint".
 
-### 4.2 Score (Windows standard scoring)
+### 4.2 Cheats
+
+In the settings dialog (section "Cheats"). Both are normal game actions (`{ type: 'cheat', cheat }`), so they work in multiplayer (the server applies them for everyone) and can be undone.
+
+- **Win now** (`win`): all 52 cards go to the foundations; the game is won. The cards first glide to the foundations, then the win cascade and the win dialog follow.
+- **Hopeless deal** (`lose`): a new deal in which no move is possible at all, from the first second:
+  - the 7 face-up tableau cards are all red (rank 6 or higher), so none fits on another;
+  - all aces, and every black card that would fit on one of the red top cards, are hidden in the tableau;
+  - the stock holds only cards that fit nowhere.
+  Pressing "Hint" shows "No moves" at once.
+
+### 4.3 Score (Windows standard scoring)
 
 | Action | Points |
 |---|---|
@@ -111,7 +122,7 @@ The **time penalty** can be switched on/off (default: on). It is stored in the g
 
 **Dialogs**:
 - Help: short explanation of rules and controls
-- Settings: language (English/German), draw 1/3 and time penalty on/off (both apply from the next game), show score on/off, animations on/off
+- Settings: language (English/German), cheats (see 4.2), draw 1/3 and time penalty on/off (both apply from the next game), show score on/off, animations on/off
 - New game: confirmation if a game is in progress
 - Win: time, moves, score, "New game" button
 - Game over: see 4.1 (opened from the hint button)
@@ -161,7 +172,7 @@ Client → server:
 | `t` | Content |
 |---|---|
 | `join` | `room`, `name`, `state?` (initial state if the room is new) |
-| `action` | `move {cardId, to}` · `draw` · `undo` · `newGame {seed, drawCount, timePenalty}` |
+| `action` | `move {cardId, to}` · `draw` · `undo` · `newGame {seed, drawCount, timePenalty}` · `cheat {cheat: win \| lose}` |
 | `cursor` | `x`, `y` |
 | `drag` | `cards[]`, `x`, `y` (position of the top dragged card) |
 | `dragEnd` | – |

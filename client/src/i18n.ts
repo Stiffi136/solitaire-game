@@ -36,6 +36,10 @@ const en = {
   showScore: 'Show score',
   animations: 'Animations',
   language: 'Language',
+  cheats: 'Cheats',
+  cheatWin: 'Win now',
+  cheatLose: 'Hopeless deal',
+  cheatHint: '"Win now" puts all cards on the foundations. "Hopeless deal" starts a game in which no move is possible. Both can be undone and apply to everyone in a multiplayer room.',
   helpTitle: 'How to play',
   helpHtml: `<p><b>Goal:</b> Move all cards by suit from ace to king onto the four foundations at the top right (♠ ♥ ♦ ♣).</p>
 <ul>
@@ -110,6 +114,10 @@ const de: Record<Key, string> = {
   showScore: 'Punkte anzeigen',
   animations: 'Animationen',
   language: 'Sprache',
+  cheats: 'Cheats',
+  cheatWin: 'Sofort gewinnen',
+  cheatLose: 'Aussichtslose Partie',
+  cheatHint: '„Sofort gewinnen“ legt alle Karten auf die Ablagen. „Aussichtslose Partie“ startet ein Spiel, in dem kein Zug möglich ist. Beides lässt sich rückgängig machen und gilt im Mehrspieler für alle im Raum.',
   helpTitle: 'So wird gespielt',
   helpHtml: `<p><b>Ziel:</b> Alle Karten nach Farbe von Ass bis König auf die vier Ablagen oben rechts legen (♠ ♥ ♦ ♣).</p>
 <ul>

@@ -242,6 +242,16 @@ $('dlg-settings').addEventListener('change', () => {
 
 $('btn-help').onclick = () => openModal('dlg-help');
 
+// cheats
+$('cheat-win').onclick = () => {
+  document.querySelectorAll<HTMLElement>('.modal').forEach((m) => (m.hidden = true));
+  dispatch({ type: 'cheat', cheat: 'win' });
+};
+$('cheat-lose').onclick = () => {
+  document.querySelectorAll<HTMLElement>('.modal').forEach((m) => (m.hidden = true));
+  dispatch({ type: 'cheat', cheat: 'lose' });
+};
+
 // fullscreen
 const fsBtn = $('btn-fs');
 if (!document.fullscreenEnabled) fsBtn.hidden = true;

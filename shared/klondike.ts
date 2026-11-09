@@ -38,7 +38,9 @@ export type Action =
   | { type: 'move'; cardId: number; to: PileId }
   | { type: 'draw' }
   | { type: 'undo' }
-  | { type: 'newGame'; seed: number; drawCount: DrawCount; timePenalty: boolean };
+  | { type: 'newGame'; seed: number; drawCount: DrawCount; timePenalty: boolean }
+  /** Cheats: "win" puts all cards on the foundations, "lose" deals a hopeless game. */
+  | { type: 'cheat'; cheat: 'win' | 'lose' };
 
 export interface Game { state: GameState; history: GameState[] }
 
@@ -190,6 +192,24 @@ function applyInner(game: Game, action: Action): boolean {
       game.history = [];
       return true;
     }
+    case 'cheat': {
+      if (action.cheat === 'win') {
+        if (cur.wonAt != null) return false;
+        const next = clone(cur);
+        for (const p of ALL_PILES) next.piles[p] = [];
+        FOUNDATIONS.forEach((f, suit) => { next.piles[f] = Array.from({ length: 13 }, (_, r) => suit * 13 + r); });
+        next.faceUp.fill(true);
+        commit(game, next);
+        return true;
+      }
+      if (action.cheat === 'lose') {
+        const next = hopelessGame(cur);
+        commit(game, next);
+        next.moves = 0;
+        return true;
+      }
+      return false;
+    }
     case 'undo': {
       const prev = game.history.pop();
       if (!prev) return false;
@@ -243,6 +263,38 @@ function applyInner(game: Game, action: Action): boolean {
     default:
       return false;
   }
+}
+
+/**
+ * A deal in which no move is possible at all:
+ * - the 7 face-up tableau cards are all red, so none fits on another;
+ * - all aces and every black card that could go on a red top card are hidden;
+ * - the stock holds only cards that fit nowhere (no aces, only red cards and
+ *   black cards that do not fit on the red tops).
+ */
+function hopelessGame(cur: GameState): GameState {
+  const rand = mulberry32((cur.seed ^ 0x5eed) + cur.version);
+  const shuffle = <T>(a: T[]) => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(rand() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+  const all = Array.from({ length: 52 }, (_, i) => i);
+  const reds = all.filter((c) => isRed(c) && rankOf(c) > 1);
+  const tops = shuffle(reds.filter((c) => rankOf(c) >= 6)).slice(0, 7);
+  const topRanks = new Set(tops.map(rankOf));
+  const mustHide = all.filter((c) => !tops.includes(c) && (rankOf(c) === 1 || (!isRed(c) && topRanks.has(rankOf(c) + 1))));
+  const free = shuffle(all.filter((c) => !tops.includes(c) && !mustHide.includes(c)));
+  const hiddenCards = shuffle([...mustHide, ...free.slice(0, 21 - mustHide.length)]);
+  const stock = free.slice(21 - mustHide.length);
+  const st = newGame(cur.seed, cur.drawCount, cur.timePenalty);
+  for (const p of ALL_PILES) st.piles[p] = [];
+  st.faceUp.fill(false);
+  let h = 0;
+  TABLEAUS.forEach((t, col) => {
+    for (let k = 0; k < col; k++) st.piles[t].push(hiddenCards[h++]);
+    st.piles[t].push(tops[col]);
+    st.faceUp[tops[col]] = true;
+  });
+  st.piles.stock = stock;
+  st.version = cur.version;
+  return st;
 }
 
 function commit(game: Game, next: GameState) {
