@@ -1,65 +1,68 @@
 # Solitaire 3D
 
-Klondike-Solitaire im Browser mit three.js. Einzelspieler läuft offline (GitHub Pages), optional kooperativer Mehrspieler über einen WebSocket-Server (Docker, z. B. auf Render).
+**▶ Play it live: https://stiffi136.github.io/solitaire-game**
 
-Spezifikation: [SPEC.md](SPEC.md)
+Klondike solitaire in the browser, rendered with three.js. Single player runs offline (GitHub Pages); optional cooperative multiplayer through a WebSocket server (Docker, e.g. on Render).
 
-## Lokal starten
+Specification: [SPEC.md](SPEC.md)
+
+## Run locally
 
 ```bash
 npm install
-npm run server:dev   # Mehrspieler-Server auf ws://localhost:8080
-npm run dev          # Frontend auf http://localhost:5173
+npm run server:dev   # multiplayer server on ws://localhost:8080
+npm run dev          # frontend on http://localhost:5173
 ```
 
-Auf `localhost` ist `ws://localhost:8080` als Server vorausgewählt.
+Or both at once: `npm run dev:all`.
 
-Oder beides zusammen: `npm run dev:all`.
+On `localhost` the client uses `ws://localhost:8080` automatically.
 
-### Dev Container
+### Dev container
 
-`.devcontainer/` enthält eine fertige Umgebung (Node 22, Docker-in-Docker, GitHub CLI). In VS Code: **Reopen in Container**, oder auf GitHub: **Code → Codespaces**. Danach `npm run dev:all`.
+`.devcontainer/` contains a ready-made environment (Node 22, Docker-in-Docker, GitHub CLI). In VS Code: **Reopen in Container**, or on GitHub: **Code → Codespaces**. Then run `npm run dev:all`.
 
-In **Codespaces** wird die Server-Adresse automatisch erkannt. Port 8080 muss dafür auf **Public** stehen (Tab „Ports“ → Rechtsklick → Port Visibility), sonst blockiert GitHub die WebSocket-Verbindung von Mitspielern.
+In **Codespaces** the server address is detected automatically. Port 8080 must be set to **Public** for this (tab "Ports" → right click → Port Visibility), otherwise GitHub blocks the WebSocket connection of other players.
 
-## Struktur
+## Structure
 
-| Ordner | Inhalt |
+| Folder | Content |
 |---|---|
-| `client/` | Vite-Frontend (three.js-Renderer, UI, WebSocket-Client) |
-| `server/` | Node-WebSocket-Server (`ws`), mit esbuild zu einer Datei gebündelt |
-| `shared/` | Spielregeln (`klondike.ts`) und Protokoll (`protocol.ts`), von beiden genutzt |
+| `client/` | Vite frontend (three.js renderer, UI, WebSocket client) |
+| `server/` | Node WebSocket server (`ws`), bundled into one file with esbuild |
+| `shared/` | Game rules (`klondike.ts`) and protocol (`protocol.ts`), used by both |
 
 ## Deployment
 
-### 1. Server auf Render
+### 1. Server on Render
 
-1. Repo auf GitHub pushen.
-2. In Render: **New → Blueprint** und das Repo wählen (nutzt `render.yaml`),
-   oder **New → Web Service → Docker** mit dem `Dockerfile` im Root.
-3. Nach dem Deploy die URL notieren, z. B. `https://solitaire-mp.onrender.com`.
-   Test: `https://…onrender.com/health` liefert `ok`.
+1. Push the repo to GitHub.
+2. In Render: **New → Blueprint** and select the repo (uses `render.yaml`),
+   or **New → Web Service → Docker** with the `Dockerfile` in the root.
+3. After the deploy, note the URL, e.g. `https://solitaire-mp.onrender.com`.
+   Test: `https://….onrender.com/health` returns `ok`.
 
-Hinweis: Der Free-Plan legt den Dienst nach ca. 15 Minuten ohne Verkehr schlafen. Das erste Verbinden dauert dann bis zu einer Minute. Räume liegen nur im Speicher und sind nach einem Neustart weg.
+Note: the free plan puts the service to sleep after about 15 minutes without traffic. The first connection then takes up to a minute. Rooms live only in memory and are lost when the server restarts.
 
-Lokal testen: `docker build -t solitaire-mp . && docker run -p 8080:8080 solitaire-mp`
+Test locally: `docker build -t solitaire-mp . && docker run -p 8080:8080 solitaire-mp`
 
-### 2. Frontend auf GitHub Pages
+### 2. Frontend on GitHub Pages
 
-1. Im Repo: **Settings → Pages → Source: GitHub Actions**.
+1. In the repo: **Settings → Pages → Source: GitHub Actions**.
 2. **Settings → Secrets and variables → Actions → Variables**: `VITE_SERVER_URL` = `wss://solitaire-mp.onrender.com`.
-3. Push auf `main` → Workflow `.github/workflows/deploy.yml` baut und veröffentlicht.
+3. Push to `main` → the workflow `.github/workflows/deploy.yml` builds and publishes.
 
-Ohne `VITE_SERVER_URL` funktioniert alles auch. Die Server-Adresse wird dann im Mehrspieler-Dialog eingegeben und im Browser gespeichert.
+The server address is compiled into the build and is not shown in the UI. Without `VITE_SERVER_URL`, the game is single player only (the multiplayer button is hidden).
 
-## Mehrspieler
+## Multiplayer
 
-- 👥 → Name eingeben → **Neuen Raum erstellen**. Das aktuelle Spiel wird übernommen.
-- Link kopieren und teilen (`…/?room=CODE`). Wer ihn öffnet, tritt direkt bei.
-- Alle spielen dieselbe Partie. Zeiger und gezogene Karten der anderen sind live sichtbar.
-- Der Server ist maßgeblich: Er prüft jeden Zug mit denselben Regeln und schickt den neuen Stand an alle.
+- 👥 → enter a name → **Neuen Raum erstellen** (create room). The current game is taken over.
+- Copy and share the link (`…/?room=CODE`). Whoever opens it joins directly.
+- Everyone plays the same game. Pointers and dragged cards of the other players are visible live.
+- The server is authoritative: it checks every move with the same rules and sends the new state to everyone.
+- Rooms are deleted 30 minutes after the last player left.
 
-## Lizenzen
+## Licenses
 
-- Bildkarten (Bube, Dame, König): „English pattern playing cards deck“ von Dmitry Fomin, Wikimedia Commons. Details in `client/public/cards/LICENSE.md`.
-- Alle anderen Grafiken werden zur Laufzeit per Canvas gezeichnet.
+- Court cards (jack, queen, king): "English pattern playing cards deck" by Dmitry Fomin, Wikimedia Commons, CC0. Details in `client/public/cards/LICENSE.md`.
+- All other graphics are drawn at runtime on a canvas.

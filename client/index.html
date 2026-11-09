@@ -72,6 +72,18 @@
     </div>
   </div>
 
+  <div class="modal" id="dlg-over" hidden>
+    <div class="card center">
+      <h2>Keine Züge mehr</h2>
+      <p>Es ist kein sinnvoller Zug mehr möglich – auch nicht mit den Karten im Stapel.</p>
+      <p id="over-stats"></p>
+      <div class="row center">
+        <button class="pill" id="over-undo">Rückgängig</button>
+        <button class="pill accent" id="over-new">Neues Spiel</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal" id="dlg-settings" hidden>
     <div class="card">
       <h2>Einstellungen</h2>
@@ -108,7 +120,6 @@
       <h2>Mehrspieler</h2>
       <div id="mp-form">
         <label class="field">Dein Name<input id="mp-name" maxlength="20" autocomplete="nickname" placeholder="z. B. Anna" /></label>
-        <label class="field">Server<input id="mp-server" placeholder="wss://dein-server.onrender.com" autocapitalize="off" spellcheck="false" /></label>
         <label class="field">Raumcode<input id="mp-room" maxlength="12" placeholder="z. B. K7M2Q" autocapitalize="characters" spellcheck="false" /></label>
         <div class="row">
           <button class="pill" id="mp-join">Beitreten</button>
@@ -125,7 +136,7 @@
         </div>
         <ul id="mp-players"></ul>
       </div>
-      <p class="hint" id="mp-wake" hidden>Verbinde… Ein schlafender Server (Render Free) kann bis zu 1 Minute zum Aufwachen brauchen.</p>
+      <p class="hint" id="mp-wake" hidden>Verbinde… Ein schlafender Server kann bis zu 1 Minute zum Aufwachen brauchen.</p>
       <div class="row end"><button class="pill" data-close>Schließen</button></div>
     </div>
   </div>

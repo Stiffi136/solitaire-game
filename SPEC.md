@@ -1,182 +1,198 @@
-# Solitaire 3D – Spezifikation
+# Solitaire 3D – Specification
 
-Status: v3 (Entscheidungen eingearbeitet) · Sprache der UI: Deutsch
+Status: v4 · UI language: German
 
 Mockup: `docs/mockup.png`
 
-## 1. Ziel
+## 1. Goal
 
-Klondike-Solitaire im Browser, gerendert mit three.js. Singleplayer läuft komplett offline (statisch auf GitHub Pages). Optional kooperativer Multiplayer: mehrere Personen spielen **dieselbe** Partie gemeinsam über einen WebSocket-Server (Docker-Image auf Render).
+Klondike solitaire in the browser, rendered with three.js. Single player runs fully offline (static site on GitHub Pages). Optional cooperative multiplayer: several people play **the same** game together through a WebSocket server (Docker image on Render).
 
-## 2. Tech-Stack
+## 2. Tech stack
 
-| Teil | Technik |
+| Part | Technology |
 |---|---|
-| Frontend | Vite, TypeScript (strict), three.js, kein UI-Framework (HTML/CSS-Overlay) |
-| Server | Node 22, TypeScript, `ws`, gebündelt mit esbuild zu einer Datei |
-| Gemeinsam | `shared/`: Spiellogik + Nachrichtenprotokoll, von Client und Server importiert |
-| Hosting | Frontend: GitHub Pages (GitHub Actions) · Server: Docker auf Render |
+| Frontend | Vite, TypeScript (strict), three.js, no UI framework (HTML/CSS overlay) |
+| Server | Node 22, TypeScript, `ws`, bundled into one file with esbuild |
+| Shared | `shared/`: game logic and message protocol, imported by client and server |
+| Hosting | Frontend: GitHub Pages (GitHub Actions) · Server: Docker on Render |
 
-## 3. Projektstruktur
+## 3. Project structure
 
 ```
 client/            index.html, src/ (main, renderer, textures, net, style)
 server/src/        index.ts (HTTP + WebSocket)
-shared/            klondike.ts (Regeln), protocol.ts (Nachrichten)
-Dockerfile         Multi-Stage, nur der Server
-render.yaml        Render-Blueprint
-.github/workflows/deploy.yml   Build + Deploy auf Pages
+shared/            klondike.ts (rules), protocol.ts (messages)
+Dockerfile         multi-stage, server only
+render.yaml        Render blueprint
+.github/workflows/deploy.yml   build and deploy to Pages
+.devcontainer/     dev container (Node 22, Docker-in-Docker)
 ```
 
-## 4. Spielregeln (Klondike)
+## 4. Game rules (Klondike)
 
-- 52 Karten, 7 Tableau-Spalten (1–7 Karten, oberste offen), Stock, Waste, 4 Foundations.
-- Ziehen: **1 oder 3 Karten** (Wahl beim neuen Spiel).
-- Stock leer → Klick legt Waste umgedreht zurück (unbegrenzt oft).
-- Tableau: absteigend, Farbe wechselnd; leere Spalte nur König. Offene Teilstapel dürfen als Ganzes bewegt werden.
-- Foundation: **feste Farbe pro Platz** in der Reihenfolge ♠ ♥ ♦ ♣ (wie im Mockup), aufsteigend ab Ass; Karten dürfen zurück aufs Tableau.
-- Verdeckte oberste Tableau-Karte wird automatisch aufgedeckt.
-- Gewonnen, wenn alle 52 Karten auf den Foundations liegen.
-- Mischen deterministisch per Seed (gleicher Seed = gleiches Spiel).
-- Undo (Verlauf bis 200 Schritte), Zähler für Züge, Spielzeit, Punkte.
-- **Tipp**: Ein möglicher Zug wird gesucht und kurz hervorgehoben (Quelle und Ziel leuchten). Reihenfolge: Foundation → Karte aufdecken → Tableau-Zug → Stock ziehen. Gibt es keinen Zug mehr, erscheint „Keine Züge mehr“.
+- 52 cards, 7 tableau columns (1–7 cards, top card face up), stock, waste, 4 foundations.
+- Draw **1 or 3 cards** (chosen when a new game starts).
+- Empty stock → a click turns the waste back over into the stock (unlimited).
+- Tableau: descending, alternating colors; only a king goes on an empty column. Face-up runs can be moved as a whole.
+- Foundations: **one fixed suit per slot** in the order ♠ ♥ ♦ ♣ (as in the mockup), ascending from the ace; cards may be moved back to the tableau.
+- A face-down top card of a tableau column is turned over automatically.
+- The game is won when all 52 cards are on the foundations.
+- Shuffling is deterministic per seed (same seed = same deal).
+- Undo (history of up to 200 steps), move counter, play time, score.
+- **Hint**: finds a useful move and highlights it briefly (source and target glow).
+- **Auto finish**: when stock and waste are empty and all cards are face up, a button appears that moves the remaining cards to the foundations.
 
-### 4.1 Punkte (Windows-Standardwertung)
+### 4.1 Game over
 
-| Aktion | Punkte |
+- The game is over when it is not won and **no progress is possible any more**, not even through a sequence of moves.
+- Progress means: a hidden tableau card is revealed, a card leaves stock/waste, or the game is won.
+- Detection: direct progress moves are checked first, then a bounded breadth-first search over all legal moves (draws and foundation-to-tableau moves included). If the search hits its limit, the game counts as **not** over (no false game over).
+- The hint uses the same logic: it returns the first move on the shortest path to progress, so following hints never loops.
+- UI: a "No moves left" dialog with time, moves, score and the buttons "Undo" and "New game". It is shown once per game state, about 0.7 s after the last change. In multiplayer, every player sees it.
+
+### 4.2 Score (Windows standard scoring)
+
+| Action | Points |
 |---|---|
-| Waste → Tableau | +5 |
-| Waste → Foundation | +10 |
-| Tableau → Foundation | +10 |
-| Tableau-Karte aufdecken | +5 |
-| Foundation → Tableau | −15 |
-| Waste zurück in den Stock (Ziehen 1) | −100 |
-| Waste zurück in den Stock (Ziehen 3, ab dem 4. Durchgang) | −20 |
-| Alle 10 Sekunden Spielzeit (nur wenn Zeitstrafe an) | −2 |
-| Zeitbonus beim Sieg (bei mehr als 30 s) | +700 000 / Sekunden |
+| Waste → tableau | +5 |
+| Waste → foundation | +10 |
+| Tableau → foundation | +10 |
+| Turn over a tableau card | +5 |
+| Foundation → tableau | −15 |
+| Waste back to stock (draw 1) | −100 |
+| Waste back to stock (draw 3, from the 4th pass) | −20 |
+| Every 10 seconds of play (only with time penalty on) | −2 |
+| Time bonus on win (if longer than 30 s) | +700,000 / seconds |
 
-Die Punkte fallen nie unter 0. Undo stellt auch die Punkte wieder her.
+The score never drops below 0. Undo also restores the score.
 
-**Zeitstrafe** ist einstellbar (an/aus, Standard: an). Sie wird beim Start eines Spiels im Spielstand festgelegt. Im Multiplayer gilt daher für alle dieselbe Einstellung.
-- **Auto-Finish**: Sobald Stock/Waste leer und alles aufgedeckt ist, erscheint ein Button, der die restlichen Karten automatisch ablegt.
+The **time penalty** can be switched on/off (default: on). It is stored in the game state when a game starts, so in multiplayer the same setting applies to everyone.
 
-## 5. Darstellung (three.js)
+## 5. Rendering (three.js)
 
-- Orthografische Kamera von oben → scharfe 2D-Optik mit 3D-Effekten.
-- Karten = Gruppe aus Vorder- und Rückseite (zwei Planes); Umdrehen als echte Drehung um die Y-Achse.
-- Look wie im Mockup: klassisches Kartendesign auf dunkelgrünem Filz.
-- **Zahlenkarten und Asse** werden zur Laufzeit per Canvas erzeugt: Eckindex oben links (Rang, darunter Farbsymbol, rot/schwarz mit Serifenschrift) und klassische Anordnung der Symbole in der Mitte. Symbole werden als Pfade gezeichnet (kein Emoji-Problem auf iOS).
-- **Bildkarten (B, D, K)** mit illustrierten Figuren wie im Mockup. Quelle: „English pattern playing cards deck“ von Dmitry Fomin (Wikimedia Commons, CC0/gemeinfrei). Die 12 Bildkarten liegen als SVG im Repo (`client/public/cards/`), werden beim Start geladen und auf die Canvas-Textur gezeichnet. Lizenz wird im README genannt. Fallback, falls ein Bild nicht lädt: Rahmen mit großem Buchstaben.
-- **Rückseite**: blau mit Rautenmuster und weißem Rand.
-- Stock zeigt seine Höhe als leichten Stapelrand.
-- Leere Foundations: dunkler Umriss mit blassem Farbsymbol (♠ ♥ ♦ ♣). Leere Tableau-Spalte und leerer Stock: dunkler Umriss (Stock mit Umdreh-Symbol ↻).
-- Verdeckte Tableau-Karten sind nur als schmale Streifen sichtbar, offene etwas weiter gefächert.
-- Weiche Schatten; gezogene Karten heben sich an (größerer Schatten).
-- Animationen: Karten gleiten zum Ziel und heben sich dabei kurz an. Umdrehen als 3D-Drehung. Sieg: Karten-Kaskade.
-- Hervorhebung für Tipp: leuchtender Rand um Quell- und Zielkarte.
-- Responsiv: Layout passt sich an Hoch- und Querformat an; lange Spalten werden enger gefächert, damit sie ins Bild passen.
+- Orthographic camera from above → crisp 2D look with 3D effects.
+- Card = group of front and back plane; turning over is a real rotation around the Y axis.
+- Look as in the mockup: classic card design on dark green felt.
+- **Number cards and aces** are drawn at runtime on a canvas: corner index top left (rank, suit symbol below, red/black, serif font) and the classic pip layout in the middle. Suit symbols are drawn as paths (no emoji issues on iOS).
+- **Court cards (J, Q, K)** with illustrated figures as in the mockup. Source: "English pattern playing cards deck" by Dmitry Fomin (Wikimedia Commons, CC0). The 12 court cards are SVG files in the repo (`client/public/cards/`), loaded at start and drawn onto the canvas texture. Fallback if an image does not load: frame with a large letter.
+- **Back**: blue with a diamond pattern and a white border.
+- The stock shows its height as a slight stack edge.
+- Empty foundations: dark outline with a faint suit symbol (♠ ♥ ♦ ♣). Empty tableau column and empty stock: dark outline (stock with a redeal symbol ↻).
+- Face-down tableau cards show only as narrow strips, face-up cards are fanned wider.
+- Soft shadows; dragged cards lift up (larger shadow).
+- Animations: cards glide to their target and lift briefly while moving. Turning over as a 3D rotation. Win: card cascade.
+- Hint highlight: glowing outline around source and target card.
+- Responsive: the layout adapts to portrait and landscape; long columns are fanned tighter so they fit on screen.
 
-### 5.1 Oberfläche (HTML-Overlay)
+### 5.1 User interface (HTML overlay)
 
-**Kopfleiste** (dunkelgrün, wie im Mockup):
-- links: Logo ♠ + „Solitaire“
-- rechts: `Zeit: mm:ss` · `Züge: n` · `Punkte: n`
-- Icons: Multiplayer 👥 (neu, nicht im Mockup), Hilfe ?, Einstellungen ⚙, Vollbild ⛶
-- im Multiplayer zusätzlich: Farbpunkte mit Namen der Mitspieler
+**Top bar** (dark green, as in the mockup):
+- left: logo ♠ + "Solitaire"
+- right: `Zeit: mm:ss` · `Züge: n` · `Punkte: n`
+- icons: multiplayer 👥 (new, not in the mockup), help ?, settings ⚙, fullscreen ⛶
+- in multiplayer also: colored dots with the names of the players
 
-**Fußleiste** (umrandete Buttons, zentriert): `Rückgängig` · `Neu starten` · `Tipp`. Bei Auto-Finish erscheint dort zusätzlich `Fertigstellen`.
+**Bottom bar** (outlined buttons, centered): `Rückgängig` (undo) · `Neu starten` (new game) · `Tipp` (hint). With auto finish, `Fertigstellen` (finish) appears as well.
 
-**Dialoge**:
-- Hilfe: Regeln und Bedienung kurz erklärt
-- Einstellungen: Ziehen 1/3 und Zeitstrafe an/aus (beides gilt ab dem nächsten Spiel), Punkte anzeigen an/aus, Animationen an/aus
-- Neu starten: Rückfrage, wenn das Spiel schon läuft
-- Sieg: Zeit, Züge, Punkte, Button „Neues Spiel“
-- Multiplayer (siehe 7)
+**Dialogs**:
+- Help: short explanation of rules and controls
+- Settings: draw 1/3 and time penalty on/off (both apply from the next game), show score on/off, animations on/off
+- New game: confirmation if a game is in progress
+- Win: time, moves, score, "New game" button
+- Game over: see 4.1
+- Multiplayer: see 7
 
-**Mobil (Hochformat)**: Kopfleiste nur Logo-Symbol, Werte kompakt (`00:34 · 12 · 283`); Fußleiste nur Icons. Vollbild-Button wird ausgeblendet, wenn der Browser es nicht kann (iPhone).
+**Mobile (portrait)**: top bar shows only the logo symbol, compact values (`00:34 · 12 · 283`); bottom bar icons only. The fullscreen button is hidden if the browser does not support it (iPhone).
 
-## 6. Bedienung
+## 6. Controls
 
-- Maus und Touch über Pointer Events.
-- **Drag & Drop**: Karte/Teilstapel greifen, auf Ziel ziehen; ungültig → zurückgleiten. Ziel = Stapel mit größter Überlappung, auf dem der Zug erlaubt ist.
-- **Tippen/Klicken** auf offene Karte: automatischer Zug (zuerst Foundation, dann passende Tableau-Spalte).
-- Klick auf Stock: ziehen bzw. umdrehen.
-- Tastatur: `Strg+Z` = Undo.
-- Singleplayer-Spielstand wird in `localStorage` gespeichert (überlebt Reload).
+- Mouse and touch via pointer events.
+- **Drag and drop**: grab a card or a run, drop it on a target; invalid → it glides back. Target = the pile with the largest overlap on which the move is legal.
+- **Tap/click** a face-up card: automatic move (foundation first, then a matching tableau column).
+- Click on the stock: draw or turn the waste over.
+- Keyboard: `Ctrl+Z` = undo.
+- The single-player game is saved in `localStorage` (survives a reload).
 
-## 7. Multiplayer (kooperativ)
+## 7. Multiplayer (cooperative)
 
-### 7.1 Ablauf
-- Multiplayer-Dialog: Name, Server-URL, Raumcode.
-- **Raum erstellen**: zufälliger 5-stelliger Code; der aktuelle Spielstand des Erstellers wird übernommen.
-- **Beitreten**: per Code oder Einladungslink `…/?room=CODE` (optional `&server=URL`).
-- Alle Spieler dürfen jederzeit ziehen; es gibt keine Runden.
-- Mitspieler werden oben mit Farbpunkt + Name angezeigt.
-- Zeit, Züge und Punkte gehören zur gemeinsamen Partie. „Tipp“ zeigt den Hinweis nur dem, der klickt.
+### 7.1 Flow
+- Multiplayer dialog: name and room code. The server address is **not** shown or editable (see 8).
+- **Create room**: random 5-character code; the creator's current game is taken over.
+- **Join**: by code or invite link `…/?room=CODE`.
+- If no server is configured for the build, the multiplayer button is hidden.
+- All players may move at any time; there are no turns.
+- Players are shown in the top bar with a colored dot and name.
+- Time, moves and score belong to the shared game. "Hint" shows the hint only to the player who clicks it.
 
-### 7.2 Synchronisation
-- **Server ist maßgeblich**: Er hält den Spielstand, wendet Aktionen mit derselben Logik (`shared/`) an und sendet den neuen Stand an alle.
-- Client führt eigene Züge sofort lokal aus (flüssig); der Serverstand überschreibt ihn. Ungültige Züge (z. B. zwei gleichzeitig auf dieselbe Karte) werden so automatisch korrigiert.
-- **Mauszeiger** der Mitspieler: farbiger Pfeil mit Namen, ca. 20 Updates/s, weich interpoliert.
-- **Drag & Drop live**: Während jemand zieht, sehen alle anderen die Karten unter seinem Zeiger mitwandern. Diese Karten sind für andere gesperrt, bis losgelassen wird.
-- Koordinaten werden in Tisch-Koordinaten (Welt-Einheiten) übertragen, damit sie bei unterschiedlichen Bildschirmgrößen passen.
-- Undo und Neues Spiel wirken für alle.
-- Kein Anti-Cheat; nur Basisprüfungen, damit kaputte Nachrichten den Server nicht abstürzen lassen.
+### 7.2 Synchronization
+- **The server is authoritative**: it holds the game state, applies actions with the same logic (`shared/`) and sends the new state to everyone.
+- The client applies its own moves immediately (smooth); the server state overrides it. Invalid moves (e.g. two players grabbing the same card) are corrected this way.
+- **Mouse pointers** of other players: colored arrow with name, about 20 updates/s, smoothly interpolated.
+- **Live drag and drop**: while someone drags, everyone else sees the cards move under that player's pointer. These cards are locked for others until they are dropped.
+- Coordinates are sent in table coordinates (world units), so they match across screen sizes.
+- Undo and new game apply to everyone.
+- No anti-cheat; only basic checks so that broken messages cannot crash the server.
 
-### 7.3 Verbindung
-- Automatischer Reconnect mit Backoff (1 s → max. 10 s), danach automatisches Wiederbeitreten.
-- Hinweis beim Verbinden: Render-Free-Tier kann bis ~1 Minute zum Aufwachen brauchen.
-- Keepalive: Server-Ping alle 30 s, tote Verbindungen werden getrennt.
-- Leere Räume werden nach 30 Minuten gelöscht (nur im Speicher, keine Datenbank).
+### 7.3 Connection
+- Automatic reconnect with backoff (1 s → max. 10 s), then automatic rejoin. The client sends its current state when it joins, so a room that no longer exists is recreated with that state.
+- Notice while connecting: a sleeping server (Render free tier) can take up to about 1 minute to wake up.
+- Keepalive: server ping every 30 s, dead connections are closed.
+- Rooms live only in memory (no database).
+- **Room cleanup**: a room is deleted 30 minutes after its last player left (checked every 60 s). A room with at least one connected player is never deleted. A server restart removes all rooms.
 
-### 7.4 Protokoll (JSON über WebSocket)
+### 7.4 Protocol (JSON over WebSocket)
 
-Client → Server:
-| `t` | Inhalt |
+Client → server:
+| `t` | Content |
 |---|---|
-| `join` | `room`, `name`, `state?` (Startstand, falls Raum neu) |
+| `join` | `room`, `name`, `state?` (initial state if the room is new) |
 | `action` | `move {cardId, to}` · `draw` · `undo` · `newGame {seed, drawCount, timePenalty}` |
 | `cursor` | `x`, `y` |
-| `drag` | `cards[]`, `x`, `y` (Position der obersten gezogenen Karte) |
+| `drag` | `cards[]`, `x`, `y` (position of the top dragged card) |
 | `dragEnd` | – |
+| `ping` | – |
 
-Server → Client:
-| `t` | Inhalt |
+Server → client:
+| `t` | Content |
 |---|---|
-| `welcome` | eigene `id`, `room`, `state`, `players[]` |
-| `state` | neuer `state`, `by` (wer gezogen hat) |
-| `players` | Liste `{id, name, color}` |
-| `cursor` / `drag` / `dragEnd` | wie oben + `id` des Spielers |
+| `welcome` | own `you` id, `room`, `state`, `players[]` |
+| `state` | new `state`, `by` (who moved; missing if the action was rejected) |
+| `players` | list `{id, name, color}` |
+| `cursor` / `drag` / `dragEnd` | as above + `id` of the player |
 | `error` | `message` |
+| `pong` | – |
 
 ## 8. Deployment
 
 ### Frontend (GitHub Pages)
-- Workflow bei Push auf `main`: `npm ci` → `npm run build` → Deploy von `dist/`.
-- `base: './'`, damit es unter `https://<user>.github.io/<repo>/` läuft.
-- Standard-Server-URL über Repo-Variable `VITE_SERVER_URL` (z. B. `wss://solitaire-mp.onrender.com`); im Dialog überschreibbar.
+- Workflow on push to `main`: `npm ci` → `npm run build` → deploy `dist/`.
+- `base: './'` so it runs under `https://<user>.github.io/<repo>/`.
+- The server address is fixed at build time through the repository variable `VITE_SERVER_URL` (e.g. `wss://solitaire-mp.onrender.com`). Users cannot see or change it in the UI.
+- Local development: `ws://localhost:8080` is used automatically on `localhost`; in GitHub Codespaces the address is derived from the forwarded port 8080.
 
 ### Server (Render)
-- `Dockerfile` im Repo-Root, Multi-Stage, Laufzeit-Image `node:22-alpine`, läuft als User `node`.
-- Port aus `PORT` (Render setzt ihn), Standard 8080.
-- `GET /health` → `ok` für den Health-Check.
-- `render.yaml` als Blueprint (Web Service, Docker, Free-Plan).
+- `Dockerfile` in the repo root, multi-stage, runtime image `node:22-alpine`, runs as user `node`.
+- Port from `PORT` (set by Render), default 8080.
+- `GET /health` → `ok` for the health check.
+- `render.yaml` as blueprint (web service, Docker, free plan).
 
-### Lokal
-- `npm run dev` (Frontend), `npm run server:dev` (Server auf `ws://localhost:8080`).
+### Local
+- `npm run dev` (frontend), `npm run server:dev` (server on `ws://localhost:8080`), or both with `npm run dev:all`.
 
-## 9. Nicht im Umfang (v1)
+## 9. Out of scope (v1)
 
-- Accounts, Ranglisten
-- Persistenz der Räume über Server-Neustarts
-- Andere Solitaire-Varianten (Spider, FreeCell)
+- Accounts, leaderboards
+- Rooms that survive a server restart
+- Other solitaire variants (Spider, FreeCell)
 - Sound
-- Anti-Cheat
+- Anti-cheat
 
-## 10. Entscheidungen
+## 10. Decisions
 
-- Variante: Klondike, Ziehen 1 oder 3.
-- Bildkarten: freies Grafik-Deck (Dmitry Fomin, CC0).
-- Zeitstrafe: einstellbar.
-- Multiplayer-Rechte: alle Spieler gleich (jeder darf Neu starten und Rückgängig).
-- Beitritt per Raumcode und Einladungslink, keine Raumliste.
+- Variant: Klondike, draw 1 or 3.
+- Court cards: free artwork (Dmitry Fomin, CC0).
+- Time penalty: configurable.
+- Multiplayer rights: all players are equal (everyone may start a new game and undo).
+- Joining by room code and invite link, no room list.
+- Server address is not configurable in the UI.

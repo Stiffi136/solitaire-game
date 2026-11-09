@@ -4,7 +4,7 @@
   "forwardPorts": [5173, 8080],
   "portsAttributes": {
     "5173": { "label": "Frontend (Vite)", "onAutoForward": "openBrowser" },
-    "8080": { "label": "Multiplayer-Server", "onAutoForward": "silent" }
+    "8080": { "label": "Multiplayer server", "onAutoForward": "silent" }
   },
   "postCreateCommand": "npm ci",
   "customizations": {

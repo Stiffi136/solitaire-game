@@ -1,7 +1,7 @@
 import './style.css';
 import {
   Action, applyAction, canAutoFinish, createGame, displayScore, DrawCount, elapsedSeconds, findHint, Game,
-  GameState, isValidState, newGame, nextFinishMove, randomSeed,
+  GameState, isGameOver, isValidState, newGame, nextFinishMove, randomSeed,
 } from '../../shared/klondike';
 import type { PlayerInfo, ServerMsg } from '../../shared/protocol';
 import { NetClient, NetStatus, normalizeServerUrl, throttle } from './net';
@@ -19,17 +19,18 @@ function showFatal(msg: string) {
 
 // ---------- settings & persistence ----------
 
-interface Settings { drawCount: DrawCount; timePenalty: boolean; showScore: boolean; animations: boolean; name: string; server: string }
+interface Settings { drawCount: DrawCount; timePenalty: boolean; showScore: boolean; animations: boolean; name: string }
 const SETTINGS_KEY = 'solitaire.settings';
 const GAME_KEY = 'solitaire.game';
-const defaultServer = (import.meta.env.VITE_SERVER_URL as string | undefined)
+/** Multiplayer server, fixed at build time (VITE_SERVER_URL) or derived for local dev. */
+const SERVER_URL = normalizeServerUrl((import.meta.env.VITE_SERVER_URL as string | undefined)
   || (location.hostname === 'localhost' || location.hostname === '127.0.0.1' ? 'ws://localhost:8080' : '')
   // GitHub Codespaces: <name>-5173.app.github.dev -> <name>-8080.app.github.dev
-  || (location.hostname.endsWith('.app.github.dev') ? `wss://${location.hostname.replace(/-5173\./, '-8080.')}` : '');
+  || (location.hostname.endsWith('.app.github.dev') ? `wss://${location.hostname.replace(/-5173\./, '-8080.')}` : ''));
 const settings: Settings = {
   drawCount: 1, timePenalty: true, showScore: true,
   animations: !matchMedia('(prefers-reduced-motion: reduce)').matches,
-  name: '', server: defaultServer,
+  name: '',
   ...JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}'),
 };
 const saveSettings = () => localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
@@ -90,6 +91,23 @@ function stateChanged() {
   const won = game.state.wonAt != null;
   if (won && !lastWon) setTimeout(showWin, settings.animations ? 4500 : 200);
   lastWon = won;
+  checkGameOver();
+}
+
+// Game over: checked shortly after the last change, shown once per state.
+let overTimer = 0;
+let overShownFor = -1;
+function checkGameOver() {
+  clearTimeout(overTimer);
+  closeModal('dlg-over');
+  overTimer = window.setTimeout(() => {
+    const st = game.state;
+    if (pending > 0 || st.version === overShownFor || !isGameOver(st)) return;
+    overShownFor = st.version;
+    $('over-stats').innerHTML = `Zeit <b>${fmtTime(elapsedSeconds(st))}</b> · Züge <b>${st.moves}</b>`
+      + (settings.showScore ? ` · Punkte <b>${displayScore(st)}</b>` : '');
+    openModal('dlg-over');
+  }, 700);
 }
 
 // ---------- HUD ----------
@@ -136,7 +154,7 @@ window.addEventListener('keydown', (e) => {
 });
 
 function startNewGame() {
-  closeModal('dlg-new'); closeModal('dlg-win');
+  closeModal('dlg-new'); closeModal('dlg-win'); closeModal('dlg-over');
   dispatch({ type: 'newGame', seed: randomSeed(), drawCount: settings.drawCount, timePenalty: settings.timePenalty });
 }
 
@@ -150,6 +168,8 @@ $('btn-new').onclick = () => {
 };
 $('new-confirm').onclick = startNewGame;
 $('win-new').onclick = startNewGame;
+$('over-new').onclick = startNewGame;
+$('over-undo').onclick = () => { closeModal('dlg-over'); dispatch({ type: 'undo' }); };
 $('btn-undo').onclick = () => dispatch({ type: 'undo' });
 $('btn-hint').onclick = () => {
   const h = findHint(game.state);
@@ -210,12 +230,11 @@ const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const randomCode = () => Array.from({ length: 5 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
 const cleanCode = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
 
-function inviteLink(room: string, server: string) {
+function inviteLink(room: string) {
   const u = new URL(location.href);
   u.search = '';
   u.hash = '';
   u.searchParams.set('room', room);
-  if (server && server !== normalizeServerUrl(defaultServer)) u.searchParams.set('server', server);
   return u.toString();
 }
 
@@ -225,11 +244,10 @@ function renderMpDialog() {
   $('mp-room-view').hidden = !inRoom;
   if (!inRoom) {
     $<HTMLInputElement>('mp-name').value ||= settings.name;
-    $<HTMLInputElement>('mp-server').value ||= settings.server;
     return;
   }
   $('mp-code').textContent = net!.room;
-  $<HTMLInputElement>('mp-link').value = inviteLink(net!.room, net!.url);
+  $<HTMLInputElement>('mp-link').value = inviteLink(net!.room);
   const ul = $('mp-players');
   ul.innerHTML = '';
   for (const p of players) {
@@ -258,17 +276,16 @@ function renderPlayers() {
   }
 }
 
+// without a configured server there is no multiplayer
+if (!SERVER_URL) $('btn-mp').hidden = true;
 $('btn-mp').onclick = () => { renderMpDialog(); openModal('dlg-mp'); };
 
 function readForm(): { name: string; server: string } | null {
   const name = $<HTMLInputElement>('mp-name').value.trim().slice(0, 20);
-  const server = normalizeServerUrl($<HTMLInputElement>('mp-server').value);
   if (!name) { toast('Bitte gib einen Namen ein.'); $('mp-name').focus(); return null; }
-  if (!server) { toast('Bitte gib die Server-Adresse ein.'); $('mp-server').focus(); return null; }
   settings.name = name;
-  settings.server = server;
   saveSettings();
-  return { name, server };
+  return { name, server: SERVER_URL };
 }
 
 $('mp-create').onclick = () => {
@@ -326,7 +343,6 @@ function leave() {
   renderPlayers();
   const u = new URL(location.href);
   u.searchParams.delete('room');
-  u.searchParams.delete('server');
   history.replaceState(null, '', u);
   // keep playing the shared game alone
   game.history = [];
@@ -345,7 +361,7 @@ function onServerMessage(m: ServerMsg) {
       game.history = [];
       lastWon = m.state.wonAt != null;
       renderer.setState(game.state);
-      updateHud(); renderPlayers(); renderMpDialog();
+      updateHud(); renderPlayers(); renderMpDialog(); checkGameOver();
       toast(`Verbunden mit Raum ${m.room}`);
       break;
     case 'state': {
@@ -413,11 +429,12 @@ function clearCursors() { for (const id of [...cursors.keys()]) removeCursor(id)
 {
   const params = new URLSearchParams(location.search);
   const room = cleanCode(params.get('room') || '');
-  const server = params.get('server');
-  if (server) settings.server = normalizeServerUrl(server);
-  if (room) {
+  if (room && SERVER_URL) {
     $<HTMLInputElement>('mp-room').value = room;
-    if (settings.name && settings.server) connect(settings.server, room, settings.name);
+    if (settings.name) connect(SERVER_URL, room, settings.name);
     else { renderMpDialog(); openModal('dlg-mp'); }
   }
 }
+
+// a saved game may already be over
+checkGameOver();
