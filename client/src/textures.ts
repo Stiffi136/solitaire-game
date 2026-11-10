@@ -66,6 +66,8 @@ export function drawSuit(ctx: CanvasRenderingContext2D, suit: number, cx: number
     ctx.moveTo(r, -s * 0.5); ctx.arc(0, -s * 0.5, r, 0, Math.PI * 2);
     ctx.moveTo(-s * 0.48 + r, s * 0.15); ctx.arc(-s * 0.48, s * 0.15, r, 0, Math.PI * 2);
     ctx.moveTo(s * 0.48 + r, s * 0.15); ctx.arc(s * 0.48, s * 0.15, r, 0, Math.PI * 2);
+    // fill the gap between the three leaves (else a white spot shows in the middle)
+    ctx.moveTo(0, -s * 0.5); ctx.lineTo(s * 0.48, s * 0.15); ctx.lineTo(-s * 0.48, s * 0.15); ctx.closePath();
     ctx.moveTo(-s * 0.12, 0); ctx.lineTo(s * 0.12, 0);
     ctx.quadraticCurveTo(s * 0.12, s * 0.75, s * 0.42, s);
     ctx.lineTo(-s * 0.42, s);
@@ -92,8 +94,13 @@ const PIPS: Record<number, [number, number][]> = {
 // ---- face card art (loaded SVGs) ----
 const faceArt = new Map<number, HTMLImageElement>();
 const cardCanvases = new Map<number, { ctx: CanvasRenderingContext2D; tex: THREE.CanvasTexture }>();
-/** Part of the source SVG that holds the figure (fractions of its size). */
-const FACE_CROP = { x: 0.088, y: 0.054, w: 0.829, h: 0.892 };
+/** Part of the source SVG that holds the figure: the blue frame (fractions of its size, 720×1080 px measured). */
+const FACE_CROP = { x: 56 / 720, y: 56 / 1080, w: 608 / 720, h: 968 / 1080 };
+/**
+ * The frame is open at two corners, where the SVG has its own rank/suit index.
+ * Those corners are left out (we draw our own index), as an L-shaped outline in source pixels.
+ */
+const FACE_OUTLINE: [number, number][] = [[120, 56], [664, 56], [664, 780], [600, 780], [600, 1024], [56, 1024], [56, 300], [120, 300]];
 
 function drawFace(ctx: CanvasRenderingContext2D, id: number) {
   const color = isRed(id) ? RED : BLACK;
@@ -101,12 +108,15 @@ function drawFace(ctx: CanvasRenderingContext2D, id: number) {
   const img = faceArt.get(id);
   if (img && img.naturalWidth > 0) {
     const iw = img.naturalWidth, ih = img.naturalHeight;
+    const sx = w / (FACE_CROP.w * 720), sy = h / (FACE_CROP.h * 1080);
     ctx.save();
-    rr(ctx, x, y, w, h, 6); ctx.clip();
+    ctx.beginPath();
+    for (const [px, py] of FACE_OUTLINE) ctx.lineTo(x + (px - 56) * sx, y + (py - 56) * sy);
+    ctx.closePath();
+    ctx.clip();
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, w, h);
     ctx.drawImage(img, iw * FACE_CROP.x, ih * FACE_CROP.y, iw * FACE_CROP.w, ih * FACE_CROP.h, x, y, w, h);
     ctx.restore();
-    ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 2;
-    rr(ctx, x, y, w, h, 6); ctx.stroke();
   } else {
     ctx.fillStyle = isRed(id) ? '#fbeaea' : '#ececf3';
     rr(ctx, x, y, w, h, 8); ctx.fill();
